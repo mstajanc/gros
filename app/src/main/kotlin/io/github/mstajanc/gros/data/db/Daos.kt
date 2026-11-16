@@ -5,6 +5,7 @@ import androidx.room3.Insert
 import androidx.room3.Query
 import androidx.room3.Update
 import io.github.mstajanc.gros.domain.model.CategoryKind
+import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -123,6 +124,45 @@ interface TransactionDao {
 
     @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :categoryId")
     suspend fun countByCategory(categoryId: Long): Int
+
+    /**
+     * Zoznam transakcií od najnovšej. Každý filter je nepovinný a dajú sa kombinovať:
+     * obdobie (vrátane oboch krajných dní), účet (aj ako cieľ prevodu), kategórie a hľadanie v poznámke.
+     */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE (:from IS NULL OR date >= :from)
+          AND (:to IS NULL OR date <= :to)
+          AND (:accountId IS NULL OR accountId = :accountId OR toAccountId = :accountId)
+          AND (:filterCategories = 0 OR categoryId IN (:categoryIds))
+          AND (:notePattern IS NULL OR noteSearch LIKE :notePattern ESCAPE '\')
+        ORDER BY date DESC, createdAt DESC, id DESC
+        """,
+    )
+    fun observeFiltered(
+        from: LocalDate?,
+        to: LocalDate?,
+        accountId: Long?,
+        filterCategories: Boolean,
+        categoryIds: List<Long>,
+        notePattern: String?,
+    ): Flow<List<TransactionEntity>>
+
+    @Query("SELECT * FROM transactions ORDER BY date DESC, createdAt DESC, id DESC LIMIT :limit")
+    fun observeRecent(limit: Int): Flow<List<TransactionEntity>>
+
+    /** Predošlé poznámky obsahujúce hľadaný text: najprv najčastejšie, pri zhode novšie. */
+    @Query(
+        """
+        SELECT note FROM transactions
+        WHERE note IS NOT NULL AND noteSearch LIKE :notePattern ESCAPE '\'
+        GROUP BY note
+        ORDER BY COUNT(*) DESC, MAX(createdAt) DESC
+        LIMIT :limit
+        """,
+    )
+    suspend fun suggestNotes(notePattern: String, limit: Int): List<String>
 
     @Query(ACCOUNT_FLOWS_SQL)
     fun observeAccountFlows(): Flow<List<AccountFlowRow>>

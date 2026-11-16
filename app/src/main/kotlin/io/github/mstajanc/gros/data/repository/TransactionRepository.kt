@@ -6,6 +6,8 @@ import io.github.mstajanc.gros.data.db.TransactionEntity
 import io.github.mstajanc.gros.data.db.toDomain
 import io.github.mstajanc.gros.data.db.toEntity
 import io.github.mstajanc.gros.domain.NoteNormalizer
+import io.github.mstajanc.gros.domain.NoteSuggestions
+import io.github.mstajanc.gros.domain.TransactionFilter
 import io.github.mstajanc.gros.domain.model.Transaction
 import io.github.mstajanc.gros.domain.model.TransactionDraft
 import io.github.mstajanc.gros.domain.rules.InvariantViolationException
@@ -16,6 +18,8 @@ import io.github.mstajanc.gros.domain.rules.Violation
 import io.github.mstajanc.gros.domain.rules.throwIfViolated
 import io.github.mstajanc.gros.domain.rules.toPosting
 import java.time.Clock
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /** Načíta záznamy, na ktoré zápis odkazuje, aby ich mohli overiť čisté pravidlá v `domain`. */
 internal suspend fun GrosDatabase.loadPostingRefs(posting: Posting): PostingRefs = PostingRefs(
@@ -37,6 +41,29 @@ class TransactionRepository(private val db: GrosDatabase, private val clock: Clo
     private val rules = db.recurringRuleDao()
 
     suspend fun get(id: Long): Transaction? = transactions.getById(id)?.toDomain()
+
+    /**
+     * Zoznam od najnovšej transakcie. [categoryIds] je už rozvinutý výber kategórie
+     * (hlavná + jej podkategórie), `null` = bez filtra kategórie.
+     */
+    fun observeFiltered(filter: TransactionFilter, categoryIds: List<Long>?): Flow<List<Transaction>> =
+        transactions.observeFiltered(
+            from = filter.period.from,
+            to = filter.period.to,
+            accountId = filter.accountId,
+            filterCategories = categoryIds != null,
+            categoryIds = categoryIds.orEmpty(),
+            notePattern = NoteNormalizer.containsPattern(filter.query),
+        ).map { list -> list.map { it.toDomain() } }
+
+    fun observeRecent(limit: Int): Flow<List<Transaction>> =
+        transactions.observeRecent(limit).map { list -> list.map { it.toDomain() } }
+
+    /** Návrhy poznámky: od 2 znakov najviac 5 predošlých poznámok obsahujúcich zadaný text. */
+    suspend fun suggestNotes(input: String): List<String> {
+        val pattern = NoteSuggestions.pattern(input) ?: return emptyList()
+        return transactions.suggestNotes(pattern, NoteSuggestions.LIMIT)
+    }
 
     /** [recurringRuleId] nastavuje len generátor opakovaných platieb. */
     suspend fun create(draft: TransactionDraft, recurringRuleId: Long? = null): Long = db.withWriteTransaction {

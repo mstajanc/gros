@@ -1,0 +1,528 @@
+package io.github.mstajanc.gros.ui.transaction
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.mstajanc.gros.R
+import io.github.mstajanc.gros.domain.RelativeDay
+import io.github.mstajanc.gros.domain.SlovakDates
+import io.github.mstajanc.gros.domain.model.Category
+import io.github.mstajanc.gros.domain.model.TransactionType
+import io.github.mstajanc.gros.ui.common.AmountKeypad
+import io.github.mstajanc.gros.ui.common.AmountText
+import io.github.mstajanc.gros.ui.common.CenteredContent
+import io.github.mstajanc.gros.ui.common.FieldTile
+import io.github.mstajanc.gros.ui.common.FilterChip
+import io.github.mstajanc.gros.ui.common.GrosTextField
+import io.github.mstajanc.gros.ui.common.OptionSheet
+import io.github.mstajanc.gros.ui.common.PrimaryButton
+import io.github.mstajanc.gros.ui.common.ScreenHeader
+import io.github.mstajanc.gros.ui.common.ScreenPadding
+import io.github.mstajanc.gros.ui.common.SecondaryButton
+import io.github.mstajanc.gros.ui.common.SegmentedControl
+import io.github.mstajanc.gros.ui.common.SheetOption
+import io.github.mstajanc.gros.ui.common.grosViewModel
+import io.github.mstajanc.gros.ui.common.outlined
+import io.github.mstajanc.gros.ui.theme.GrosShapes
+import io.github.mstajanc.gros.ui.theme.GrosTheme
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+
+private val TYPES = listOf(TransactionType.EXPENSE, TransactionType.INCOME, TransactionType.TRANSFER)
+
+/** Počet dlaždíc hlavných kategórií pred dlaždicou „Viac“. */
+private const val GRID_CATEGORIES = 7
+
+private enum class Picker { ACCOUNT, TO_ACCOUNT, DATE, ALL_CATEGORIES }
+
+@Composable
+fun TransactionFormScreen(onClose: () -> Unit, onDuplicate: () -> Unit) {
+    val viewModel = grosViewModel { container, handle -> TransactionFormViewModel(container, handle) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                FormEvent.Close -> onClose()
+            }
+        }
+    }
+
+    var picker by rememberSaveable { mutableStateOf<Picker?>(null) }
+    var noteFocused by remember { mutableStateOf(false) }
+
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        CenteredContent(modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
+            val selection = state.selection
+            if (!state.loaded || selection == null) return@CenteredContent
+
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                // Pri výške okna ≥ 600 dp sú klávesnica a Uložiť prichytené dole; inak sa posúva všetko.
+                val pinned = maxHeight >= 600.dp
+                val fields: @Composable ColumnScope.() -> Unit = {
+                    FormFields(
+                        state = state,
+                        viewModel = viewModel,
+                        onPick = { picker = it },
+                        onNoteFocus = { noteFocused = it },
+                    )
+                }
+                val bottom: @Composable ColumnScope.() -> Unit = {
+                    // Kým sa píše poznámka systémovou klávesnicou, klávesnica appky ustúpi.
+                    if (!noteFocused) AmountKeypad(input = state.amount, onInput = viewModel::onAmount)
+                    PrimaryButton(stringResource(R.string.action_save), onClick = viewModel::save, enabled = state.canSave)
+                    // Pri úprave sú pod Uložiť vždy viditeľné Duplikovať a Zmazať.
+                    if (state.isEdit) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            SecondaryButton(
+                                stringResource(R.string.form_duplicate),
+                                onClick = onDuplicate,
+                                modifier = Modifier.weight(1f),
+                            )
+                            SecondaryButton(
+                                stringResource(R.string.action_delete),
+                                onClick = viewModel::delete,
+                                modifier = Modifier.weight(1f),
+                                contentColor = GrosTheme.colors.warning,
+                            )
+                        }
+                    }
+                }
+
+                Column(modifier = Modifier.fillMaxSize().padding(horizontal = ScreenPadding)) {
+                    ScreenHeader(
+                        title = stringResource(if (state.isEdit) R.string.form_edit else R.string.form_new),
+                        modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                        onBack = onClose,
+                        backIcon = R.drawable.ic_x,
+                        backDescription = stringResource(R.string.action_close),
+                    )
+                    if (pinned) {
+                        Column(
+                            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            content = fields,
+                        )
+                        Column(
+                            modifier = Modifier.padding(top = 10.dp, bottom = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            content = bottom,
+                        )
+                    } else {
+                        Column(
+                            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                        ) {
+                            fields()
+                            bottom()
+                        }
+                    }
+                }
+            }
+
+            when (picker) {
+                Picker.ACCOUNT -> OptionSheet(
+                    title = stringResource(
+                        if (selection.type == TransactionType.TRANSFER) R.string.form_from_account else R.string.form_account,
+                    ),
+                    options = state.selectableAccounts.map { SheetOption(it.id, it.name) },
+                    selected = selection.accountId,
+                    onSelect = {
+                        viewModel.onAccount(it)
+                        picker = null
+                    },
+                    onDismiss = { picker = null },
+                )
+
+                Picker.TO_ACCOUNT -> OptionSheet(
+                    title = stringResource(R.string.form_to_account),
+                    options = state.selectableAccounts
+                        .filter { it.id != selection.accountId }
+                        .map { SheetOption(it.id, it.name) },
+                    selected = selection.toAccountId,
+                    onSelect = {
+                        viewModel.onToAccount(it)
+                        picker = null
+                    },
+                    onDismiss = { picker = null },
+                )
+
+                Picker.ALL_CATEGORIES -> OptionSheet(
+                    title = stringResource(R.string.form_all_categories),
+                    options = state.mainCategories.map { SheetOption(it.id, it.name) },
+                    selected = selection.categoryId,
+                    onSelect = {
+                        viewModel.onCategory(it)
+                        picker = null
+                    },
+                    onDismiss = { picker = null },
+                )
+
+                Picker.DATE -> PastDatePicker(
+                    date = state.draft?.date ?: state.today,
+                    today = state.today,
+                    onConfirm = {
+                        viewModel.onDate(it)
+                        picker = null
+                    },
+                    onDismiss = { picker = null },
+                )
+
+                null -> Unit
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.FormFields(
+    state: TransactionFormState,
+    viewModel: TransactionFormViewModel,
+    onPick: (Picker) -> Unit,
+    onNoteFocus: (Boolean) -> Unit,
+) {
+    val draft = state.draft ?: return
+    val selection = draft.selection
+    val isTransfer = selection.type == TransactionType.TRANSFER
+
+    SegmentedControl(
+        options = listOf(
+            stringResource(R.string.type_expense),
+            stringResource(R.string.type_income),
+            stringResource(R.string.type_transfer),
+        ),
+        selectedIndex = TYPES.indexOf(selection.type),
+        onSelect = { viewModel.onType(TYPES[it]) },
+        // Typ Prevod je dostupný až pri dvoch aktívnych účtoch.
+        enabled = { TYPES[it] != TransactionType.TRANSFER || state.transferAvailable },
+    )
+
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            stringResource(R.string.form_amount),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        AmountText(state.amount.display + " €", style = MaterialTheme.typography.displayLarge)
+    }
+
+    if (isTransfer) {
+        FieldTile(
+            label = stringResource(R.string.form_to_account),
+            value = state.accountName(selection.toAccountId) ?: stringResource(R.string.form_to_account_pick),
+            onClick = { onPick(Picker.TO_ACCOUNT) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    } else {
+        CategoryGrid(state, onCategory = viewModel::onCategory, onMore = { onPick(Picker.ALL_CATEGORIES) })
+        val subcategories = state.subcategories
+        if (subcategories.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                subcategories.forEach { sub ->
+                    FilterChip(
+                        text = sub.name,
+                        selected = sub.id == selection.subcategoryId,
+                        onClick = { viewModel.onSubcategory(sub.id) },
+                    )
+                }
+            }
+        }
+    }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FieldTile(
+            label = stringResource(if (isTransfer) R.string.form_from_account else R.string.form_account),
+            value = state.accountName(selection.accountId).orEmpty(),
+            onClick = { onPick(Picker.ACCOUNT) },
+            modifier = Modifier.weight(1f),
+        )
+        FieldTile(
+            label = stringResource(R.string.form_date),
+            value = dateFieldText(draft.date, state.today),
+            onClick = { onPick(Picker.DATE) },
+            modifier = Modifier.weight(1f),
+        )
+    }
+
+    NoteField(
+        draft = draft,
+        suggestions = state.suggestions,
+        onShow = viewModel::onShowNote,
+        onChange = viewModel::onNote,
+        onSuggestion = viewModel::onSuggestion,
+        onFocus = onNoteFocus,
+    )
+
+}
+
+@Composable
+private fun dateFieldText(date: LocalDate, today: LocalDate): String {
+    val short = "${date.dayOfMonth}. ${date.monthValue}."
+    return when (SlovakDates.relativeDay(date, today)) {
+        RelativeDay.TODAY -> stringResource(R.string.form_date_relative, stringResource(R.string.day_today), short)
+        RelativeDay.YESTERDAY -> stringResource(R.string.form_date_relative, stringResource(R.string.day_yesterday), short)
+        RelativeDay.OTHER -> SlovakDates.fullDate(date)
+    }
+}
+
+/** Mriežka 2 × 4: prvých 7 hlavných kategórií v poradí používateľa a dlaždica „Viac“. */
+@Composable
+private fun CategoryGrid(state: TransactionFormState, onCategory: (Long) -> Unit, onMore: () -> Unit) {
+    val all = state.mainCategories
+    val selectedId = state.selection?.categoryId
+    val shown = all.take(GRID_CATEGORIES)
+    // Vybraná kategória mimo prvých siedmich sa ukáže na mieste dlaždice „Viac“.
+    val selectedElsewhere = all.firstOrNull { it.id == selectedId && it !in shown }
+    val cells: List<Category?> = shown + List(GRID_CATEGORIES - shown.size) { null }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            stringResource(R.string.form_category),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        (cells.map { it?.let { category -> GridCell.Item(category) } ?: GridCell.Empty } + GridCell.More)
+            .chunked(4)
+            .forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { cell ->
+                        when (cell) {
+                            is GridCell.Item -> CategoryTile(
+                                text = cell.category.name,
+                                selected = cell.category.id == selectedId,
+                                outlinedOnly = false,
+                                onClick = { onCategory(cell.category.id) },
+                                modifier = Modifier.weight(1f),
+                            )
+
+                            GridCell.Empty -> Spacer(Modifier.weight(1f))
+                            GridCell.More -> CategoryTile(
+                                text = selectedElsewhere?.name ?: stringResource(R.string.form_more),
+                                selected = selectedElsewhere != null,
+                                outlinedOnly = true,
+                                onClick = onMore,
+                                modifier = Modifier.weight(1f),
+                                description = stringResource(R.string.form_all_categories),
+                            )
+                        }
+                    }
+                }
+            }
+    }
+}
+
+private sealed interface GridCell {
+    data class Item(val category: Category) : GridCell
+    data object Empty : GridCell
+    data object More : GridCell
+}
+
+@Composable
+private fun CategoryTile(
+    text: String,
+    selected: Boolean,
+    outlinedOnly: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    description: String? = null,
+) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .clip(GrosShapes.cardSmall)
+            .background(
+                when {
+                    selected -> scheme.primaryContainer
+                    outlinedOnly -> scheme.background
+                    else -> scheme.surface
+                },
+            )
+            .then(
+                when {
+                    selected -> Modifier.outlined(scheme.primary, GrosShapes.cardSmall)
+                    outlinedOnly -> Modifier.outlined(scheme.outline, GrosShapes.cardSmall)
+                    else -> Modifier
+                },
+            )
+            .clickable(role = Role.Button, onClick = onClick)
+            .then(if (description != null && !selected) Modifier.semantics { contentDescription = description } else Modifier)
+            .padding(horizontal = 4.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelMedium,
+            color = when {
+                selected -> scheme.primary
+                outlinedOnly -> scheme.onSurfaceVariant
+                else -> scheme.onSurface
+            },
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/** Poznámka je nepovinná a predvolene skrytá za „+ Poznámka“; pri písaní našepkáva predošlé zápisy. */
+@Composable
+private fun NoteField(
+    draft: FormDraft,
+    suggestions: List<String>,
+    onShow: () -> Unit,
+    onChange: (String) -> Unit,
+    onSuggestion: (String) -> Unit,
+    onFocus: (Boolean) -> Unit,
+) {
+    if (!draft.noteVisible) {
+        Text(
+            stringResource(R.string.form_add_note),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .heightIn(min = 48.dp)
+                .clip(GrosShapes.cardSmall)
+                .clickable(role = Role.Button, onClick = onShow)
+                .padding(horizontal = 4.dp, vertical = 12.dp),
+        )
+        return
+    }
+
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    val label = stringResource(R.string.form_note)
+    // Pole sa otvára ťuknutím na „+ Poznámka“, preto hneď dostane fokus; pri úprave nie.
+    var requestFocus by rememberSaveable { mutableStateOf(draft.note.isEmpty()) }
+    LaunchedEffect(Unit) {
+        if (requestFocus) {
+            focusRequester.requestFocus()
+            requestFocus = false
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface, GrosShapes.cardSmall)
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            GrosTextField(
+                value = draft.note,
+                onValueChange = onChange,
+                label = label,
+                maxLength = 200,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 28.dp)
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { onFocus(it.isFocused) },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+            )
+        }
+        if (suggestions.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                suggestions.forEach { suggestion ->
+                    FilterChip(text = suggestion, selected = false, onClick = { onSuggestion(suggestion) })
+                }
+            }
+        }
+        Spacer(Modifier.height(0.dp))
+    }
+}
+
+/** Výber dátumu, v ktorom sa nedá zvoliť budúcnosť. */
+@Composable
+private fun PastDatePicker(date: LocalDate, today: LocalDate, onConfirm: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+    val todayMillis = today.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
+    val pickerState = rememberDatePickerState(
+        initialSelectedDateMillis = date.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= todayMillis
+            override fun isSelectableYear(year: Int): Boolean = year <= today.year
+        },
+    )
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val millis = pickerState.selectedDateMillis
+                    if (millis != null) onConfirm(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
+                },
+            ) { Text(stringResource(R.string.action_done)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onSurface)
+            }
+        },
+    ) {
+        DatePicker(state = pickerState)
+    }
+}

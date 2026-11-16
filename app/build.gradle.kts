@@ -93,6 +93,9 @@ android {
     lint {
         abortOnError = true
         checkReleaseBuilds = true
+        // Počty sa skloňujú v `domain` (SlovakText), lebo systémové `plurals` sa riadia jazykom
+        // zariadenia a na neslovenskom telefóne by slovenské tvary vybrali nesprávne.
+        disable += "PluralsCandidate"
     }
 }
 
@@ -100,9 +103,19 @@ room3 {
     schemaDirectory("$projectDir/schemas")
 }
 
+kotlin {
+    compilerOptions {
+        // Spodné panely, výber dátumu a potiahnutie na zmazanie sú v Material 3 stále označené ako experimentálne.
+        optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
+    }
+}
+
 dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.datastore.preferences)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.foundation)

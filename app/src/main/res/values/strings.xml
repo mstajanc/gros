@@ -2,20 +2,162 @@
 <resources>
     <string name="app_name">Groš</string>
 
-    <!-- Dočasná obrazovka M1 (vzorka témy); v M2 ju nahradí Prehľad a tieto texty zaniknú. -->
-    <string name="preview_subtitle">Dočasná obrazovka M1 – vzorka témy</string>
-    <string name="preview_database_loading">Databáza sa otvára…</string>
-    <string name="preview_database">Databáza: schéma v%1$d · účtov: %2$d</string>
-    <string name="preview_total_label">Spolu · 3 zo 4 účtov</string>
-    <string name="preview_income">Príjmy · november</string>
-    <string name="preview_expenses">Výdavky · november</string>
-    <string name="preview_transfer">Prevod</string>
-    <string name="preview_over_budget">Prekročené o %1$s</string>
-    <string name="preview_section_colors">Farby</string>
-    <string name="preview_section_categories">Paleta kategórií</string>
-    <string name="preview_section_type">Písma</string>
-    <string name="preview_type_heading">Space Grotesk – nadpisy a sumy</string>
-    <string name="preview_type_body">Inter – ľúbozvučná čučoriedka žltá, 0123456789</string>
-    <string name="preview_type_secondary">Sekundárny text: ďatelina, ôsmy, ŕ, ĺ, ť, ň</string>
-    <string name="preview_button">Uložiť</string>
+    <!-- Spoločné akcie -->
+    <string name="action_back">Späť</string>
+    <string name="action_close">Zavrieť</string>
+    <string name="action_save">Uložiť</string>
+    <string name="action_cancel">Zrušiť</string>
+    <string name="action_delete">Zmazať</string>
+    <string name="action_undo">Späť</string>
+    <string name="action_done">Hotovo</string>
+    <string name="action_continue">Pokračovať</string>
+
+    <!-- Spodná lišta -->
+    <string name="nav_overview">Prehľad</string>
+    <string name="nav_transactions">Transakcie</string>
+    <string name="nav_plan">Plán</string>
+    <string name="nav_reports">Reporty</string>
+    <string name="nav_add">Nová transakcia</string>
+    <string name="placeholder_plan">Opakované platby pribudnú v míľniku M3 a rozpočty v M4.</string>
+    <string name="placeholder_reports">Reporty pribudnú v míľniku M4.</string>
+
+    <!-- Dni, typy a štítky -->
+    <string name="day_today">Dnes</string>
+    <string name="day_yesterday">Včera</string>
+    <string name="transfer">Prevod</string>
+    <string name="label_recurring">opakovaná</string>
+    <string name="label_archived">archivované</string>
+    <string name="type_expense">Výdavok</string>
+    <string name="type_income">Príjem</string>
+    <string name="type_transfer">Prevod</string>
+
+    <!-- Počty: 1 transakcia, 2–4 transakcie, 0 a 5+ transakcií -->
+    <string name="transactions_count_one">%1$d transakcia</string>
+    <string name="transactions_count_few">%1$d transakcie</string>
+    <string name="transactions_count_many">%1$d transakcií</string>
+    <!-- „3 zo 4 účtov“: počet v súčte, predložka z/zo, počet aktívnych účtov -->
+    <string name="accounts_of_one">%1$d %2$s %3$d účtu</string>
+    <string name="accounts_of_other">%1$d %2$s %3$d účtov</string>
+
+    <!-- Prehľad -->
+    <string name="overview_total">Spolu · %1$s</string>
+    <string name="overview_income">Príjmy · %1$s</string>
+    <string name="overview_expenses">Výdavky · %1$s</string>
+    <string name="overview_accounts">Účty</string>
+    <string name="overview_manage">Spravovať</string>
+    <string name="overview_recent">Posledné transakcie</string>
+    <string name="overview_all">Všetky</string>
+    <string name="overview_empty">Zatiaľ žiadne transakcie. Prvú pridáš tlačidlom +.</string>
+
+    <!-- Zoznam transakcií -->
+    <string name="tx_expenses">Výdavky</string>
+    <string name="tx_income">Príjmy</string>
+    <string name="filter_all_accounts">Všetky účty</string>
+    <string name="filter_all_categories">Kategórie</string>
+    <string name="filter_category_all">Všetky kategórie</string>
+    <string name="filter_period_title">Obdobie</string>
+    <string name="filter_period_month">Mesiac</string>
+    <string name="filter_period_year">Rok</string>
+    <string name="filter_period_all">Celé obdobie</string>
+    <string name="filter_account_title">Účet</string>
+    <string name="filter_category_title">Kategória</string>
+    <string name="period_previous">Predchádzajúce obdobie</string>
+    <string name="period_next">Ďalšie obdobie</string>
+    <string name="search_open">Hľadať</string>
+    <string name="search_hint">Hľadať v poznámkach</string>
+    <string name="search_info">Hľadá sa v poznámkach naprieč všetkými účtami.</string>
+    <string name="list_empty">Žiadne transakcie pre tento výber.</string>
+    <string name="snackbar_saved">Uložené</string>
+    <string name="snackbar_deleted">Transakcia zmazaná</string>
+
+    <!-- Nová a úprava transakcie -->
+    <string name="form_new">Nová transakcia</string>
+    <string name="form_edit">Úprava transakcie</string>
+    <string name="form_amount">Suma</string>
+    <string name="form_category">Kategória</string>
+    <string name="form_more">Viac</string>
+    <string name="form_all_categories">Všetky kategórie</string>
+    <string name="form_account">Účet</string>
+    <string name="form_from_account">Z účtu</string>
+    <string name="form_to_account">Na účet</string>
+    <string name="form_to_account_pick">Vybrať účet</string>
+    <string name="form_date">Dátum</string>
+    <!-- „Dnes, 15. 11.“ -->
+    <string name="form_date_relative">%1$s, %2$s</string>
+    <string name="form_add_note">+ Poznámka (nepovinné)</string>
+    <string name="form_note">Poznámka</string>
+    <string name="form_duplicate">Duplikovať</string>
+    <string name="keypad_comma">Desatinná čiarka</string>
+    <string name="keypad_backspace">Zmazať číslicu</string>
+
+    <!-- Účty -->
+    <string name="accounts_title">Účty</string>
+    <string name="accounts_add">+ Pridať účet</string>
+    <string name="accounts_total">Spolu · zahrnuté %1$s</string>
+    <string name="accounts_in_total">V súčte</string>
+    <string name="accounts_out_of_total">Mimo súčtu</string>
+    <string name="accounts_transfer">Prevod medzi účtami</string>
+    <string name="accounts_hint">Ťuknutím na účet zobrazíš jeho pohyby. Ceruzkou ho upravíš alebo opravíš zostatok.</string>
+    <string name="accounts_archived">Archivované</string>
+    <string name="accounts_restore">Obnoviť</string>
+    <string name="accounts_edit">Upraviť účet %1$s</string>
+    <string name="accounts_drag">Zmeniť poradie účtu %1$s</string>
+    <string name="accounts_move_up">Posunúť vyššie</string>
+    <string name="accounts_move_down">Posunúť nižšie</string>
+
+    <!-- Úprava účtu -->
+    <string name="account_new">Nový účet</string>
+    <string name="account_edit">Úprava účtu</string>
+    <string name="account_name">Názov</string>
+    <string name="account_type">Typ</string>
+    <string name="account_type_checking">Bežný účet</string>
+    <string name="account_type_cash">Hotovosť</string>
+    <string name="account_type_savings">Sporenie</string>
+    <string name="account_type_investment">Investície</string>
+    <string name="account_type_other">Iný</string>
+    <string name="account_opening">Počiatočný stav</string>
+    <string name="account_balance_label">Zostatok účtu</string>
+    <string name="account_correct_title">Skutočný zostatok</string>
+    <string name="account_correct_hint">Ťuknutím na zostatok ho opravíš na skutočný stav. Nevznikne transakcia a reporty sa nezmenia.</string>
+    <string name="account_negative">Záporný stav</string>
+    <string name="account_archive">Archivovať</string>
+    <string name="account_archive_last">Posledný aktívny účet sa nedá archivovať.</string>
+    <string name="account_archive_confirm_title">Archivovať účet?</string>
+    <string name="account_archive_confirm_text">Účet má zostatok %1$s. Po archivácii sa prestane ponúkať, jeho transakcie ostanú v reportoch.</string>
+    <string name="account_delete_confirm_title">Zmazať účet?</string>
+    <string name="account_delete_confirm_text">Účet nemá žiadne transakcie a zmaže sa natrvalo.</string>
+
+    <!-- Sprievodca prvým spustením -->
+    <string name="onboarding_welcome_title">Vitaj v Groši</string>
+    <string name="onboarding_welcome_text">Offline zápisník výdavkov, príjmov a prevodov. Najprv nastavíme účty a kategórie; všetko sa dá neskôr zmeniť.</string>
+    <string name="onboarding_start">Začať</string>
+    <string name="onboarding_accounts_title">Tvoje účty</string>
+    <string name="onboarding_accounts_text">Zadaj účty s ich aktuálnym stavom. História sa neimportuje.</string>
+    <string name="onboarding_default_account">Bežný účet</string>
+    <string name="onboarding_remove_account">Odstrániť účet</string>
+    <string name="onboarding_categories_title">Kategórie</string>
+    <string name="onboarding_categories_text">Odškrtni, čo nepotrebuješ. Z každého druhu musí ostať aspoň jedna hlavná kategória.</string>
+    <string name="onboarding_expense">Výdavkové</string>
+    <string name="onboarding_income">Príjmové</string>
+    <string name="onboarding_finish">Dokončiť</string>
+
+    <!-- Predvolené kategórie a podkategórie -->
+    <string name="cat_food">Potraviny</string>
+    <string name="cat_housing">Bývanie</string>
+    <string name="cat_rent">Nájom</string>
+    <string name="cat_energy">Energie</string>
+    <string name="cat_internet">Internet</string>
+    <string name="cat_car">Auto</string>
+    <string name="cat_fuel">Tankovanie</string>
+    <string name="cat_service">Servis</string>
+    <string name="cat_insurance">Poistenie</string>
+    <string name="cat_kids">Deti</string>
+    <string name="cat_fun">Zábava</string>
+    <string name="cat_health">Zdravie</string>
+    <string name="cat_doctor">Lekár</string>
+    <string name="cat_medicine">Lieky</string>
+    <string name="cat_clothes">Oblečenie</string>
+    <string name="cat_other">Ostatné</string>
+    <string name="cat_salary">Výplata</string>
+    <string name="cat_other_income">Ostatné príjmy</string>
 </resources>

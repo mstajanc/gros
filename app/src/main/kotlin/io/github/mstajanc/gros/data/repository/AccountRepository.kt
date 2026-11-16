@@ -46,6 +46,10 @@ class AccountRepository(private val db: GrosDatabase) {
 
     suspend fun get(id: Long): Account? = accounts.getById(id)?.toDomain()
 
+    /** Či na účet odkazuje nejaká transakcia alebo pravidlo; taký účet sa nedá zmazať, len archivovať. */
+    suspend fun isReferenced(id: Long): Boolean =
+        transactions.countByAccount(id) > 0 || rules.countByAccount(id) > 0
+
     suspend fun create(
         name: String,
         type: AccountType,
