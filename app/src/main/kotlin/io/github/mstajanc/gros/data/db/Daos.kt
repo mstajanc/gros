@@ -1,0 +1,186 @@
+package io.github.mstajanc.gros.data.db
+
+import androidx.room3.Dao
+import androidx.room3.Insert
+import androidx.room3.Query
+import androidx.room3.Update
+import io.github.mstajanc.gros.domain.model.CategoryKind
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface AccountDao {
+    @Query("SELECT * FROM accounts ORDER BY sortOrder, id")
+    fun observeAll(): Flow<List<AccountEntity>>
+
+    @Query("SELECT * FROM accounts ORDER BY sortOrder, id")
+    suspend fun getAll(): List<AccountEntity>
+
+    @Query("SELECT * FROM accounts WHERE id = :id")
+    suspend fun getById(id: Long): AccountEntity?
+
+    @Query("SELECT COUNT(*) FROM accounts")
+    fun observeCount(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM accounts WHERE archived = 0")
+    suspend fun countActive(): Int
+
+    @Query("SELECT COALESCE(MAX(sortOrder), -1) FROM accounts")
+    suspend fun maxSortOrder(): Int
+
+    @Insert
+    suspend fun insert(account: AccountEntity): Long
+
+    @Update
+    suspend fun update(account: AccountEntity)
+
+    @Query("UPDATE accounts SET sortOrder = :sortOrder WHERE id = :id")
+    suspend fun setSortOrder(id: Long, sortOrder: Int)
+
+    @Query("DELETE FROM accounts WHERE id = :id")
+    suspend fun deleteById(id: Long)
+}
+
+@Dao
+interface CategoryDao {
+    @Query("SELECT * FROM categories ORDER BY sortOrder, id")
+    fun observeAll(): Flow<List<CategoryEntity>>
+
+    @Query("SELECT * FROM categories ORDER BY sortOrder, id")
+    suspend fun getAll(): List<CategoryEntity>
+
+    @Query("SELECT * FROM categories WHERE id = :id")
+    suspend fun getById(id: Long): CategoryEntity?
+
+    @Query("SELECT COUNT(*) FROM categories WHERE parentId = :parentId")
+    suspend fun countChildren(parentId: Long): Int
+
+    @Query("SELECT COUNT(*) FROM categories WHERE parentId IS NULL AND archived = 0 AND kind = :kind")
+    suspend fun countActiveMain(kind: CategoryKind): Int
+
+    @Query("SELECT COALESCE(MAX(sortOrder), -1) FROM categories WHERE parentId IS NULL AND kind = :kind")
+    suspend fun maxMainSortOrder(kind: CategoryKind): Int
+
+    @Query("SELECT COALESCE(MAX(sortOrder), -1) FROM categories WHERE parentId = :parentId")
+    suspend fun maxChildSortOrder(parentId: Long): Int
+
+    @Insert
+    suspend fun insert(category: CategoryEntity): Long
+
+    @Update
+    suspend fun update(category: CategoryEntity)
+
+    @Query("UPDATE categories SET color = :color WHERE parentId = :parentId")
+    suspend fun setChildrenColor(parentId: Long, color: Int)
+
+    @Query("UPDATE categories SET sortOrder = :sortOrder WHERE id = :id")
+    suspend fun setSortOrder(id: Long, sortOrder: Int)
+
+    @Query("DELETE FROM categories WHERE id = :id")
+    suspend fun deleteById(id: Long)
+}
+
+/** Súčty pohybov jedného účtu spočítané v SQL. */
+data class AccountFlowRow(
+    val accountId: Long,
+    val incomeCents: Long,
+    val expenseCents: Long,
+    val transferInCents: Long,
+    val transferOutCents: Long,
+)
+
+// Prevod sa počíta dvakrát: ako odchod zo zdrojového účtu a ako príchod na cieľový.
+private const val ACCOUNT_FLOWS_SQL = """
+    SELECT accountId,
+           SUM(incomeCents) AS incomeCents,
+           SUM(expenseCents) AS expenseCents,
+           SUM(transferInCents) AS transferInCents,
+           SUM(transferOutCents) AS transferOutCents
+    FROM (
+        SELECT accountId,
+               CASE WHEN type = 'INCOME' THEN amountCents ELSE 0 END AS incomeCents,
+               CASE WHEN type = 'EXPENSE' THEN amountCents ELSE 0 END AS expenseCents,
+               0 AS transferInCents,
+               CASE WHEN type = 'TRANSFER' THEN amountCents ELSE 0 END AS transferOutCents
+        FROM transactions
+        UNION ALL
+        SELECT toAccountId AS accountId, 0, 0, amountCents, 0
+        FROM transactions
+        WHERE type = 'TRANSFER' AND toAccountId IS NOT NULL
+    )
+    GROUP BY accountId
+"""
+
+@Dao
+interface TransactionDao {
+    @Query("SELECT * FROM transactions WHERE id = :id")
+    suspend fun getById(id: Long): TransactionEntity?
+
+    @Query("SELECT * FROM transactions ORDER BY date DESC, createdAt DESC, id DESC")
+    suspend fun getAll(): List<TransactionEntity>
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE accountId = :accountId OR toAccountId = :accountId")
+    suspend fun countByAccount(accountId: Long): Int
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :categoryId")
+    suspend fun countByCategory(categoryId: Long): Int
+
+    @Query(ACCOUNT_FLOWS_SQL)
+    fun observeAccountFlows(): Flow<List<AccountFlowRow>>
+
+    @Query(ACCOUNT_FLOWS_SQL)
+    suspend fun getAccountFlows(): List<AccountFlowRow>
+
+    @Insert
+    suspend fun insert(transaction: TransactionEntity): Long
+
+    @Update
+    suspend fun update(transaction: TransactionEntity)
+
+    @Query("DELETE FROM transactions WHERE id = :id")
+    suspend fun deleteById(id: Long)
+}
+
+@Dao
+interface RecurringRuleDao {
+    @Query("SELECT * FROM recurring_rules WHERE id = :id")
+    suspend fun getById(id: Long): RecurringRuleEntity?
+
+    @Query("SELECT * FROM recurring_rules ORDER BY nextDate, id")
+    suspend fun getAll(): List<RecurringRuleEntity>
+
+    @Query("SELECT COUNT(*) FROM recurring_rules WHERE accountId = :accountId OR toAccountId = :accountId")
+    suspend fun countByAccount(accountId: Long): Int
+
+    @Query("SELECT COUNT(*) FROM recurring_rules WHERE categoryId = :categoryId")
+    suspend fun countByCategory(categoryId: Long): Int
+
+    @Insert
+    suspend fun insert(rule: RecurringRuleEntity): Long
+
+    @Update
+    suspend fun update(rule: RecurringRuleEntity)
+
+    @Query("DELETE FROM recurring_rules WHERE id = :id")
+    suspend fun deleteById(id: Long)
+}
+
+@Dao
+interface BudgetDao {
+    @Query("SELECT * FROM budgets ORDER BY id")
+    fun observeAll(): Flow<List<BudgetEntity>>
+
+    @Query("SELECT * FROM budgets WHERE id = :id")
+    suspend fun getById(id: Long): BudgetEntity?
+
+    @Query("SELECT * FROM budgets WHERE categoryId = :categoryId")
+    suspend fun getByCategory(categoryId: Long): BudgetEntity?
+
+    @Insert
+    suspend fun insert(budget: BudgetEntity): Long
+
+    @Update
+    suspend fun update(budget: BudgetEntity)
+
+    @Query("DELETE FROM budgets WHERE id = :id")
+    suspend fun deleteById(id: Long)
+}

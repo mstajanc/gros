@@ -1,0 +1,21 @@
+# Gradle a build
+.gradle/
+build/
+.kotlin/
+local.properties
+
+# IDE
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Podpisovanie – nikdy do repozitára
+*.jks
+*.keystore
+keystore.properties
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Písmeno G: oblúk 315° a vodorovná priečka, v bezpečnej zóne adaptívnej ikony. -->
+    <path
+        android:pathData="M66.02,41.98 A17,17 0 1 0 71,54 H56"
+        android:strokeColor="@color/gros_primary"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

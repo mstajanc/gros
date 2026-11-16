@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Groš</string>
+
+    <!-- Dočasná obrazovka M1 (vzorka témy); v M2 ju nahradí Prehľad a tieto texty zaniknú. -->
+    <string name="preview_subtitle">Dočasná obrazovka M1 – vzorka témy</string>
+    <string name="preview_database_loading">Databáza sa otvára…</string>
+    <string name="preview_database">Databáza: schéma v%1$d · účtov: %2$d</string>
+    <string name="preview_total_label">Spolu · 3 zo 4 účtov</string>
+    <string name="preview_income">Príjmy · november</string>
+    <string name="preview_expenses">Výdavky · november</string>
+    <string name="preview_transfer">Prevod</string>
+    <string name="preview_over_budget">Prekročené o %1$s</string>
+    <string name="preview_section_colors">Farby</string>
+    <string name="preview_section_categories">Paleta kategórií</string>
+    <string name="preview_section_type">Písma</string>
+    <string name="preview_type_heading">Space Grotesk – nadpisy a sumy</string>
+    <string name="preview_type_body">Inter – ľúbozvučná čučoriedka žltá, 0123456789</string>
+    <string name="preview_type_secondary">Sekundárny text: ďatelina, ôsmy, ŕ, ĺ, ť, ň</string>
+    <string name="preview_button">Uložiť</string>
+</resources>
