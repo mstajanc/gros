@@ -270,10 +270,10 @@ class TransactionFormViewModel(
                 if (editId != null && before != null) {
                     transactions.update(editId, transactionDraft)
                     // Späť po uložení úpravy vráti pôvodné hodnoty (rozhodnutie B7).
-                    container.snackbarBus.show(SnackbarEvent(R.string.snackbar_saved) { transactions.restore(before) })
+                    container.snackbarBus.show(SnackbarEvent(R.string.snackbar_saved, undo = { transactions.restore(before) }))
                 } else {
                     val newId = transactions.create(transactionDraft)
-                    container.snackbarBus.show(SnackbarEvent(R.string.snackbar_saved) { transactions.delete(newId) })
+                    container.snackbarBus.show(SnackbarEvent(R.string.snackbar_saved, undo = { transactions.delete(newId) }))
                 }
                 container.settingsRepository.setLastUsedAccountId(accountId)
                 _events.send(FormEvent.Close)
@@ -288,7 +288,7 @@ class TransactionFormViewModel(
         viewModelScope.launch {
             val deleted = transactions.delete(id)
             if (deleted != null) {
-                container.snackbarBus.show(SnackbarEvent(R.string.snackbar_deleted) { transactions.restore(deleted) })
+                container.snackbarBus.show(SnackbarEvent(R.string.snackbar_deleted, undo = { transactions.restore(deleted) }))
             }
             _events.send(FormEvent.Close)
         }

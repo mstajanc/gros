@@ -44,12 +44,18 @@ private data class Controls(val filter: TransactionFilter, val searchActive: Boo
 class TransactionsViewModel(private val container: AppContainer, handle: SavedStateHandle) : ViewModel() {
 
     private val initialAccountId: Long? = handle.get<Long>(ARG_ACCOUNT_ID)?.takeIf { it > 0 }
+    private val initialAllPeriod: Boolean = handle.get<Boolean>(ARG_ALL_PERIOD) ?: false
 
     private val controls = MutableStateFlow(
         Controls(
             filter = TransactionFilter(
-                // Predvolený je aktuálny mesiac; ťuknutie na účet otvára Celé obdobie (rozhodnutie A4).
-                period = if (initialAccountId != null) Period.All else Period.Month(YearMonth.from(container.today())),
+                // Predvolený je aktuálny mesiac; ťuknutie na účet a „Zobraziť“ zo snackbaru opakovaných
+                // platieb otvárajú Celé obdobie (rozhodnutie A4).
+                period = if (initialAccountId != null || initialAllPeriod) {
+                    Period.All
+                } else {
+                    Period.Month(YearMonth.from(container.today()))
+                },
                 accountId = initialAccountId,
             ),
             searchActive = false,
@@ -121,12 +127,13 @@ class TransactionsViewModel(private val container: AppContainer, handle: SavedSt
         viewModelScope.launch {
             val deleted = container.transactionRepository.delete(transaction.id) ?: return@launch
             container.snackbarBus.show(
-                SnackbarEvent(R.string.snackbar_deleted) { container.transactionRepository.restore(deleted) },
+                SnackbarEvent(R.string.snackbar_deleted, undo = { container.transactionRepository.restore(deleted) }),
             )
         }
     }
 
     companion object {
         const val ARG_ACCOUNT_ID = "accountId"
+        const val ARG_ALL_PERIOD = "allPeriod"
     }
 }

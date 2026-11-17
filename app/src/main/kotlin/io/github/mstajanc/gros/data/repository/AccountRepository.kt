@@ -102,14 +102,20 @@ class AccountRepository(private val db: GrosDatabase) {
     }
 
     /** Archivuje účet; posledný aktívny účet sa archivovať nedá. */
-    suspend fun archive(id: Long) {
-        db.withWriteTransaction {
-            val existing = require(id)
-            if (existing.archived) return@withWriteTransaction
-            AccountRules.canArchive(existing.toDomain(), accounts.countActive()).throwIfViolated()
-            accounts.update(existing.copy(archived = true))
-        }
+    /**
+     * Archivuje účet; posledný aktívny účet sa archivovať nedá. Aktívne opakované platby,
+     * ktoré účet používajú, sa pozastavia (pravidlo 10); vráti ich názvy.
+     */
+    suspend fun archive(id: Long): List<String> = db.withWriteTransaction {
+        val existing = require(id)
+        if (existing.archived) return@withWriteTransaction emptyList()
+        AccountRules.canArchive(existing.toDomain(), accounts.countActive()).throwIfViolated()
+        accounts.update(existing.copy(archived = true))
+        db.pauseRules(rules.getUsingAccount(id))
     }
+
+    /** Názvy aktívnych opakovaných platieb, ktoré by archivácia účtu pozastavila. */
+    suspend fun activeRulesUsing(id: Long): List<String> = rules.getUsingAccount(id).activeNames()
 
     suspend fun restore(id: Long) {
         db.withWriteTransaction {

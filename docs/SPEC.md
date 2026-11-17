@@ -385,3 +385,14 @@ Schválené Mirecom. Majú prednosť pred mockupmi aj starším textom.
 - C2 Kategórie vo formulári transakcie sú zaoblené čipy široké podľa názvu, v riadkoch za sebou, text vždy na jeden riadok; ostáva prvých 7 hlavných kategórií a „Viac“.
 - C3 Číselná klávesnica: pri novej transakcii je otvorená a skryje sa po výbere kategórie (ak je suma zadaná) alebo po ťuknutí na iné pole; pri úprave a duplikáte je skrytá. Ťuknutie na sumu ju vždy otvorí. Uložiť je stále prichytené dole.
 - C4 Správa kategórií a podkategórií ostáva v M5 (rozhodnutie A10 platí).
+
+## Rozhodnutia k M3 (17. 11. 2026)
+
+Schválené Mirecom spolu s plánom M3.
+
+- D1 Potvrdenie archivácie účtu vymenuje aktívne opakované platby, ktoré sa pozastavia; pri nulovom zostatku sa ukáže len vtedy, ak nejaké pozastaví.
+- D2 Kategória pravidla sa vyberá v spodnom paneli: hlavné kategórie a pod každou jej podkategórie s odsadením.
+- D3 Súhrn „za mesiac“ sa sčíta presne a zaokrúhli sa až výsledok, matematicky na celé centy; výdavky bez znamienka (mockup 06).
+- D4 Popis opakovania je odvodený z frekvencie, intervalu a „Ďalšej platby“ („Mesačne, 1. deň“, „Každé 3 mesiace, 15. deň“, „Týždenne, pondelok“, „Ročne, 3. 3.“).
+- D5 Nová platba s dnešnou „Ďalšou platbou“ sa zapíše bez otázky (formulár to uvádza pri poli); potvrdenie s počtom spätných zápisov sa ukáže len pri dátume v minulosti.
+- D6 Pozastaviť a Obnoviť sa uložia hneď. Obnovenie pravidla s archivovaným účtom či kategóriou appka odmietne s výzvou vybrať aktívne.

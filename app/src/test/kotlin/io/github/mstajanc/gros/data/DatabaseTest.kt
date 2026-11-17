@@ -5,6 +5,7 @@ import androidx.room3.Room
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import io.github.mstajanc.gros.data.db.GrosDatabase
+import io.github.mstajanc.gros.data.recurring.RecurringGenerator
 import io.github.mstajanc.gros.data.repository.AccountRepository
 import io.github.mstajanc.gros.data.repository.BudgetRepository
 import io.github.mstajanc.gros.data.repository.CategoryRepository
@@ -36,6 +37,11 @@ class MutableClock(private var instant: Instant, private val zone: ZoneId = Zone
     fun advanceSeconds(seconds: Long) {
         instant = instant.plusSeconds(seconds)
     }
+
+    /** Nastaví hodiny na daný deň o 10:00 UTC. */
+    fun setDate(date: LocalDate) {
+        instant = date.atTime(10, 0).toInstant(ZoneOffset.UTC)
+    }
 }
 
 /**
@@ -51,6 +57,7 @@ abstract class DatabaseTest {
     protected lateinit var transactions: TransactionRepository
     protected lateinit var rules: RecurringRuleRepository
     protected lateinit var budgets: BudgetRepository
+    protected lateinit var generator: RecurringGenerator
 
     protected val clock = MutableClock(LocalDate.of(2026, 11, 15).atTime(10, 0).toInstant(ZoneOffset.UTC))
     protected val today: LocalDate get() = LocalDate.now(clock)
@@ -64,7 +71,8 @@ abstract class DatabaseTest {
         accounts = AccountRepository(db)
         categories = CategoryRepository(db)
         transactions = TransactionRepository(db, clock)
-        rules = RecurringRuleRepository(db)
+        rules = RecurringRuleRepository(db, clock)
+        generator = RecurringGenerator(db, clock)
         budgets = BudgetRepository(db)
     }
 

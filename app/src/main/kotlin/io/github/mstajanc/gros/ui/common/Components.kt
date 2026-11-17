@@ -306,7 +306,8 @@ fun SummaryTile(
     }
 }
 
-data class SheetOption<T>(val value: T, val label: String, val supporting: String? = null)
+/** Voľba v [OptionSheet]; [indent] odsadí podkategóriu pod jej hlavnou kategóriou. */
+data class SheetOption<T>(val value: T, val label: String, val supporting: String? = null, val indent: Boolean = false)
 
 /** Spodný panel s výberom jednej položky. */
 @Composable
@@ -343,7 +344,7 @@ fun <T> OptionSheet(
                         .heightIn(min = 52.dp)
                         .clip(GrosShapes.cardSmall)
                         .selectable(selected = isSelected, role = Role.RadioButton) { onSelect(option.value) }
-                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                        .padding(start = if (option.indent) 32.dp else 8.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
@@ -378,13 +379,16 @@ fun ConfirmDialog(
     confirmLabel: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    destructive: Boolean = true,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title, style = MaterialTheme.typography.titleLarge) },
         text = { Text(text, style = MaterialTheme.typography.bodyMedium) },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text(confirmLabel, color = GrosTheme.colors.warning) }
+            TextButton(onClick = onConfirm) {
+                Text(confirmLabel, color = if (destructive) GrosTheme.colors.warning else MaterialTheme.colorScheme.primary)
+            }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {

@@ -28,6 +28,8 @@ import androidx.lifecycle.viewModelScope
 import io.github.mstajanc.gros.AppContainer
 import io.github.mstajanc.gros.R
 import io.github.mstajanc.gros.domain.MoneyFormatter
+import io.github.mstajanc.gros.domain.RuleState
+import io.github.mstajanc.gros.domain.RuleStatus
 import io.github.mstajanc.gros.domain.model.AccountType
 import io.github.mstajanc.gros.domain.rules.InvariantViolationException
 import io.github.mstajanc.gros.ui.common.AmountSheet
@@ -77,6 +79,8 @@ data class AccountFormState(
     val canArchive: Boolean = false,
     /** Natvrdo sa dá zmazať len účet bez transakcií a pravidiel. */
     val canDelete: Boolean = false,
+    /** Aktívne opakované platby, ktoré archivácia pozastaví (pravidlo 10). */
+    val affectedRules: List<String> = emptyList(),
 ) {
     val canSave: Boolean get() = name.isNotBlank()
 }
@@ -106,7 +110,11 @@ class AccountFormViewModel(private val container: AppContainer, private val hand
         )
     }
 
-    val state: StateFlow<AccountFormState> = combine(form, accounts.observeBalances()) { form, balances ->
+    val state: StateFlow<AccountFormState> = combine(
+        form,
+        accounts.observeBalances(),
+        container.recurringRuleRepository.observeRules(),
+    ) { form, balances, rules ->
         val current = balances.firstOrNull { it.account.id == accountId }
         val activeCount = balances.count { !it.account.archived }
         form.copy(
@@ -115,6 +123,9 @@ class AccountFormViewModel(private val container: AppContainer, private val hand
             canArchive = current != null && !current.account.archived && activeCount > 1,
             canDelete = current != null && !accounts.isReferenced(current.account.id) &&
                 (current.account.archived || activeCount > 1),
+            affectedRules = rules
+                .filter { (it.accountId == accountId || it.toAccountId == accountId) && RuleState.status(it) == RuleStatus.ACTIVE }
+                .map { it.name },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccountFormState())
 
@@ -252,8 +263,13 @@ fun AccountFormScreen(contentPadding: PaddingValues, onClose: () -> Unit) {
                         SecondaryButton(
                             stringResource(R.string.account_archive),
                             onClick = {
-                                // Účet s nenulovým zostatkom sa archivuje až po potvrdení (rozhodnutie B4).
-                                if (state.balanceCents != 0L) dialog = AccountDialog.ARCHIVE else viewModel.archive()
+                                // Účet s nenulovým zostatkom (B4) alebo s aktívnymi opakovanými platbami
+                                // (pravidlo 10) sa archivuje až po potvrdení.
+                                if (state.balanceCents != 0L || state.affectedRules.isNotEmpty()) {
+                                    dialog = AccountDialog.ARCHIVE
+                                } else {
+                                    viewModel.archive()
+                                }
                             },
                             modifier = Modifier.weight(1f),
                             enabled = state.canArchive,
@@ -315,7 +331,18 @@ fun AccountFormScreen(contentPadding: PaddingValues, onClose: () -> Unit) {
 
         AccountDialog.ARCHIVE -> ConfirmDialog(
             title = stringResource(R.string.account_archive_confirm_title),
-            text = stringResource(R.string.account_archive_confirm_text, MoneyFormatter.format(state.balanceCents)),
+            text = listOfNotNull(
+                if (state.balanceCents != 0L) {
+                    stringResource(R.string.account_archive_confirm_text, MoneyFormatter.format(state.balanceCents))
+                } else {
+                    null
+                },
+                if (state.affectedRules.isNotEmpty()) {
+                    stringResource(R.string.account_archive_rules, state.affectedRules.joinToString(", "))
+                } else {
+                    null
+                },
+            ).joinToString("\n\n"),
             confirmLabel = stringResource(R.string.account_archive),
             onConfirm = {
                 dialog = null

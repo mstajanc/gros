@@ -15,24 +15,37 @@ import io.github.mstajanc.gros.GrosApplication
 import io.github.mstajanc.gros.R
 import io.github.mstajanc.gros.domain.PluralForm
 import io.github.mstajanc.gros.domain.SlovakText
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
+
+/** Akcia snackbaru, ktorá namiesto zmeny dát otvorí obrazovku. */
+enum class SnackbarAction {
+    /** Transakcie s Celým obdobím (snackbar opakovaných platieb, rozhodnutie A4). */
+    SHOW_ALL_TRANSACTIONS,
+}
 
 /**
- * Správa v snackbare s nepovinnou akciou Späť. Posiela sa cez [SnackbarBus], aby prežila
- * zatvorenie obrazovky, ktorá ju vyvolala (napr. formulár po uložení).
+ * Správa v snackbare s nepovinnou akciou Späť ([undo]) alebo Zobraziť ([action]). Posiela sa cez
+ * [SnackbarBus], aby prežila zatvorenie obrazovky, ktorá ju vyvolala (napr. formulár po uložení).
  */
 class SnackbarEvent(
     @StringRes val message: Int,
+    val formatArgs: List<Any> = emptyList(),
     val undo: (suspend () -> Unit)? = null,
+    val action: SnackbarAction? = null,
 )
 
+/**
+ * Fronta snackbarov. Správy sa držia, kým ich nezobrazí rozhranie – aj tie, ktoré vzniknú
+ * pred jeho vykreslením (napr. generátor opakovaných platieb pri štarte).
+ */
 class SnackbarBus {
-    private val _events = MutableSharedFlow<SnackbarEvent>(extraBufferCapacity = 8)
-    val events: SharedFlow<SnackbarEvent> = _events
+    private val channel = Channel<SnackbarEvent>(Channel.BUFFERED)
+    val events: Flow<SnackbarEvent> = channel.receiveAsFlow()
 
     fun show(event: SnackbarEvent) {
-        _events.tryEmit(event)
+        channel.trySend(event)
     }
 }
 

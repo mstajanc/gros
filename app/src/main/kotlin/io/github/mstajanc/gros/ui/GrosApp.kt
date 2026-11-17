@@ -61,9 +61,13 @@ import io.github.mstajanc.gros.ui.common.CenteredContent
 import io.github.mstajanc.gros.ui.common.GrosIcon
 import io.github.mstajanc.gros.ui.common.ScreenHeader
 import io.github.mstajanc.gros.ui.common.ScreenPadding
+import io.github.mstajanc.gros.ui.common.SnackbarAction
 import io.github.mstajanc.gros.ui.common.appContainer
 import io.github.mstajanc.gros.ui.onboarding.OnboardingScreen
 import io.github.mstajanc.gros.ui.overview.OverviewScreen
+import io.github.mstajanc.gros.ui.plan.PlanScreen
+import io.github.mstajanc.gros.ui.plan.RuleFormScreen
+import io.github.mstajanc.gros.ui.plan.RuleFormViewModel
 import io.github.mstajanc.gros.ui.theme.GrosShapes
 import io.github.mstajanc.gros.ui.transaction.TransactionFormScreen
 import io.github.mstajanc.gros.ui.transaction.TransactionFormViewModel
@@ -76,6 +80,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 private object Routes {
     const val OVERVIEW = "overview"
     const val TRANSACTIONS = "transactions"
+    const val TRANSACTIONS_PATTERN = "transactions?allPeriod={allPeriod}"
+    const val TRANSACTIONS_ALL_PERIOD = "transactions?allPeriod=true"
 
     /** Pohyby jedného účtu: samostatná obrazovka, nie záložka Transakcie. */
     const val ACCOUNT_TRANSACTIONS_PATTERN = "accountTransactions/{accountId}"
@@ -83,10 +89,12 @@ private object Routes {
     const val REPORTS = "reports"
     const val ACCOUNTS = "accounts"
     const val ACCOUNT_PATTERN = "account?id={id}"
+    const val RULE_PATTERN = "rule?id={id}"
     const val TRANSACTION_PATTERN = "transaction?id={id}&duplicate={duplicate}&type={type}"
 
     fun transactionsOfAccount(accountId: Long) = "accountTransactions/$accountId"
     fun account(id: Long? = null) = "account?id=${id ?: -1}"
+    fun rule(id: Long? = null) = "rule?id=${id ?: -1}"
     fun transaction(id: Long? = null, duplicate: Boolean = false, type: TransactionType? = null) =
         "transaction?id=${id ?: -1}&duplicate=$duplicate&type=${type?.name.orEmpty()}"
 }
@@ -114,9 +122,16 @@ private fun MainScreen() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val route = backStackEntry?.destination?.route.orEmpty()
     // Formuláre zaberajú celú obrazovku; lišta je len na prehľadových obrazovkách.
-    val showBar = !route.startsWith("transaction?") && !route.startsWith("account?")
+    val showBar = !route.startsWith("transaction?") && !route.startsWith("account?") && !route.startsWith("rule?")
     val snackbarHostState = remember { SnackbarHostState() }
-    SnackbarEvents(snackbarHostState)
+    SnackbarEvents(snackbarHostState) { action ->
+        when (action) {
+            // Nová položka (nie launchSingleTop), aby sa Transakcie otvorili s Celým obdobím.
+            SnackbarAction.SHOW_ALL_TRANSACTIONS -> navController.navigate(Routes.TRANSACTIONS_ALL_PERIOD) {
+                popUpTo(navController.graph.findStartDestination().id)
+            }
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -155,7 +170,15 @@ private fun MainScreen() {
                     onEdit = { navController.navigate(Routes.transaction(id = it)) },
                 )
             }
-            composable(Routes.TRANSACTIONS) {
+            composable(
+                Routes.TRANSACTIONS_PATTERN,
+                arguments = listOf(
+                    navArgument(TransactionsViewModel.ARG_ALL_PERIOD) {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    },
+                ),
+            ) {
                 TransactionsScreen(
                     contentPadding = padding,
                     onEdit = { navController.navigate(Routes.transaction(id = it)) },
@@ -172,7 +195,22 @@ private fun MainScreen() {
                 )
             }
             composable(Routes.PLAN) {
-                PlaceholderScreen(R.string.nav_plan, R.string.placeholder_plan, padding)
+                PlanScreen(
+                    contentPadding = padding,
+                    onAddRule = { navController.navigate(Routes.rule()) },
+                    onEditRule = { navController.navigate(Routes.rule(it)) },
+                )
+            }
+            composable(
+                Routes.RULE_PATTERN,
+                arguments = listOf(
+                    navArgument(RuleFormViewModel.ARG_ID) {
+                        type = NavType.LongType
+                        defaultValue = -1L
+                    },
+                ),
+            ) {
+                RuleFormScreen(contentPadding = padding, onClose = navController::popBackStack)
             }
             composable(Routes.REPORTS) {
                 PlaceholderScreen(R.string.nav_reports, R.string.placeholder_reports, padding)
@@ -243,22 +281,31 @@ private fun NavHostController.navigateToTab(route: String) {
 }
 
 @Composable
-private fun SnackbarEvents(hostState: SnackbarHostState) {
+private fun SnackbarEvents(hostState: SnackbarHostState, onAction: (SnackbarAction) -> Unit) {
     val bus = appContainer().snackbarBus
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     LaunchedEffect(bus, hostState) {
         // Nová správa nahradí predošlú; každá je vidieť 5 sekúnd.
         bus.events.collectLatest { event ->
+            val actionLabel = when {
+                event.undo != null -> resources.getString(R.string.action_undo)
+                event.action != null -> resources.getString(R.string.action_show)
+                else -> null
+            }
             val result = withTimeoutOrNull(SNACKBAR_MILLIS) {
                 hostState.showSnackbar(
-                    message = resources.getString(event.message),
-                    actionLabel = event.undo?.let { resources.getString(R.string.action_undo) },
+                    message = resources.getString(event.message, *event.formatArgs.toTypedArray()),
+                    actionLabel = actionLabel,
                     duration = SnackbarDuration.Indefinite,
                 )
             }
-            val undo = event.undo
-            if (result == SnackbarResult.ActionPerformed && undo != null) scope.launch { undo() }
+            if (result == SnackbarResult.ActionPerformed) {
+                val undo = event.undo
+                val action = event.action
+                if (undo != null) scope.launch { undo() }
+                if (action != null) onAction(action)
+            }
         }
     }
 }
@@ -279,8 +326,8 @@ private val RIGHT_TABS = listOf(
 private fun BottomBar(route: String, onTab: (String) -> Unit, onAdd: () -> Unit) {
     // Účty a pohyby účtu sa otvárajú z Prehľadu, preto patria pod jeho záložku.
     val selected = when {
-        route == Routes.TRANSACTIONS -> Routes.TRANSACTIONS
-        route == Routes.PLAN -> Routes.PLAN
+        route.startsWith(Routes.TRANSACTIONS) -> Routes.TRANSACTIONS
+        route == Routes.PLAN || route.startsWith("rule?") -> Routes.PLAN
         route == Routes.REPORTS -> Routes.REPORTS
         else -> Routes.OVERVIEW
     }

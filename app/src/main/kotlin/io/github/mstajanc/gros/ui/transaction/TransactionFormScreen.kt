@@ -21,14 +21,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,6 +55,7 @@ import io.github.mstajanc.gros.domain.model.TransactionType
 import io.github.mstajanc.gros.ui.common.AmountKeypad
 import io.github.mstajanc.gros.ui.common.AmountText
 import io.github.mstajanc.gros.ui.common.CenteredContent
+import io.github.mstajanc.gros.ui.common.DateDialog
 import io.github.mstajanc.gros.ui.common.FieldTile
 import io.github.mstajanc.gros.ui.common.GrosTextField
 import io.github.mstajanc.gros.ui.common.OptionSheet
@@ -73,9 +69,7 @@ import io.github.mstajanc.gros.ui.common.grosViewModel
 import io.github.mstajanc.gros.ui.common.outlined
 import io.github.mstajanc.gros.ui.theme.GrosShapes
 import io.github.mstajanc.gros.ui.theme.GrosTheme
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 
 private val TYPES = listOf(TransactionType.EXPENSE, TransactionType.INCOME, TransactionType.TRANSFER)
 
@@ -214,9 +208,9 @@ fun TransactionFormScreen(onClose: () -> Unit, onDuplicate: () -> Unit) {
                     onDismiss = { picker = null },
                 )
 
-                Picker.DATE -> PastDatePicker(
+                Picker.DATE -> DateDialog(
                     date = state.draft?.date ?: state.today,
-                    today = state.today,
+                    maxDate = state.today,
                     onConfirm = {
                         viewModel.onDate(it)
                         picker = null
@@ -512,36 +506,5 @@ private fun NoteField(
                 }
             }
         }
-    }
-}
-
-/** Výber dátumu, v ktorom sa nedá zvoliť budúcnosť. */
-@Composable
-private fun PastDatePicker(date: LocalDate, today: LocalDate, onConfirm: (LocalDate) -> Unit, onDismiss: () -> Unit) {
-    val todayMillis = today.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
-    val pickerState = rememberDatePickerState(
-        initialSelectedDateMillis = date.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
-        selectableDates = object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= todayMillis
-            override fun isSelectableYear(year: Int): Boolean = year <= today.year
-        },
-    )
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val millis = pickerState.selectedDateMillis
-                    if (millis != null) onConfirm(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
-                },
-            ) { Text(stringResource(R.string.action_done)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onSurface)
-            }
-        },
-    ) {
-        DatePicker(state = pickerState)
     }
 }

@@ -55,6 +55,9 @@ interface CategoryDao {
     @Query("SELECT COUNT(*) FROM categories WHERE parentId = :parentId")
     suspend fun countChildren(parentId: Long): Int
 
+    @Query("SELECT id FROM categories WHERE parentId = :parentId")
+    suspend fun getChildIds(parentId: Long): List<Long>
+
     @Query("SELECT COUNT(*) FROM categories WHERE parentId IS NULL AND archived = 0 AND kind = :kind")
     suspend fun countActiveMain(kind: CategoryKind): Int
 
@@ -189,6 +192,25 @@ interface RecurringRuleDao {
 
     @Query("SELECT * FROM recurring_rules ORDER BY nextDate, id")
     suspend fun getAll(): List<RecurringRuleEntity>
+
+    @Query("SELECT * FROM recurring_rules ORDER BY nextDate, id")
+    fun observeAll(): Flow<List<RecurringRuleEntity>>
+
+    /** Nepozastavené a neukončené pravidlá, ktorých platba je dnes alebo skôr. */
+    @Query(
+        """
+        SELECT * FROM recurring_rules
+        WHERE paused = 0 AND nextDate <= :today AND (endDate IS NULL OR nextDate <= endDate)
+        ORDER BY nextDate, id
+        """,
+    )
+    suspend fun getDue(today: LocalDate): List<RecurringRuleEntity>
+
+    @Query("SELECT * FROM recurring_rules WHERE accountId = :accountId OR toAccountId = :accountId ORDER BY id")
+    suspend fun getUsingAccount(accountId: Long): List<RecurringRuleEntity>
+
+    @Query("SELECT * FROM recurring_rules WHERE categoryId IN (:categoryIds) ORDER BY id")
+    suspend fun getUsingCategories(categoryIds: List<Long>): List<RecurringRuleEntity>
 
     @Query("SELECT COUNT(*) FROM recurring_rules WHERE accountId = :accountId OR toAccountId = :accountId")
     suspend fun countByAccount(accountId: Long): Int

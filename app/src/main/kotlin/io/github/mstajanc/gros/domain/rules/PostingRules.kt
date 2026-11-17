@@ -70,13 +70,17 @@ object RecurringRuleRules {
 
     /**
      * Pravidlo sa dá uložiť len s názvom, sumou > 0, aktívnym účtom, kategóriou správneho druhu,
-     * pri prevode s dvoma rôznymi účtami a s intervalom ≥ 1.
+     * pri prevode s dvoma rôznymi účtami a s intervalom ≥ 1. Kategória nesmie byť archivovaná
+     * ([categoryArchived] zahŕňa aj archivovanú hlavnú kategóriu podkategórie) a koniec nesmie byť
+     * pred začiatkom radu.
      */
-    fun validate(draft: RecurringRuleDraft, refs: PostingRefs): Violation? {
+    fun validate(draft: RecurringRuleDraft, refs: PostingRefs, categoryArchived: Boolean = false): Violation? {
         if (draft.name.isBlank()) return Violation.NAME_BLANK
         PostingRules.validate(draft.toPosting(), refs)?.let { return it }
         if (draft.interval < 1) return Violation.INTERVAL_NOT_POSITIVE
         if (refs.account?.archived == true || refs.toAccount?.archived == true) return Violation.ACCOUNT_ARCHIVED
+        if (categoryArchived) return Violation.CATEGORY_ARCHIVED
+        if (draft.endDate != null && draft.endDate.isBefore(draft.anchorDate)) return Violation.END_BEFORE_START
         return null
     }
 }

@@ -18,8 +18,7 @@
     <string name="nav_plan">Plán</string>
     <string name="nav_reports">Reporty</string>
     <string name="nav_add">Nová transakcia</string>
-    <string name="placeholder_plan">Opakované platby pribudnú v míľniku M3 a rozpočty v M4.</string>
-    <string name="placeholder_reports">Reporty pribudnú v míľniku M4.</string>
+        <string name="placeholder_reports">Reporty pribudnú v míľniku M4.</string>
 
     <!-- Dni, typy a štítky -->
     <string name="day_today">Dnes</string>
@@ -165,4 +164,67 @@
     <string name="cat_other">Ostatné</string>
     <string name="cat_salary">Výplata</string>
     <string name="cat_other_income">Ostatné príjmy</string>
+
+    <!-- Plán: opakované platby (M3) -->
+    <string name="action_show">Zobraziť</string>
+    <string name="snackbar_recurring_written">Zapísané opakované platby: %1$d</string>
+    <string name="plan_tab_recurring">Opakované</string>
+    <string name="plan_tab_budgets">Rozpočty</string>
+    <string name="plan_expenses_month">Výdavky / mesiac</string>
+    <string name="plan_income_month">Príjmy / mesiac</string>
+    <string name="plan_group_active">Aktívne</string>
+    <string name="plan_group_paused">Pozastavené</string>
+    <string name="plan_group_finished">Ukončené</string>
+    <string name="plan_next">ďalšia %1$s</string>
+    <string name="plan_paused">pozastavená</string>
+    <string name="plan_finished">ukončená</string>
+    <string name="plan_add_rule">+ Nová opakovaná platba</string>
+    <string name="plan_empty">Zatiaľ žiadne opakované platby. Nájom, výplatu či sporenie zapíše appka sama v deň splatnosti.</string>
+    <string name="placeholder_budgets">Rozpočty pribudnú v míľniku M4.</string>
+
+    <!-- Opakovanie: 1 / 2–4 / 5+ -->
+    <string name="repeat_weekly">Týždenne</string>
+    <string name="repeat_weeks_few">Každé %1$d týždne</string>
+    <string name="repeat_weeks_many">Každých %1$d týždňov</string>
+    <string name="repeat_monthly">Mesačne</string>
+    <string name="repeat_months_few">Každé %1$d mesiace</string>
+    <string name="repeat_months_many">Každých %1$d mesiacov</string>
+    <string name="repeat_yearly">Ročne</string>
+    <string name="repeat_years_few">Každé %1$d roky</string>
+    <string name="repeat_years_many">Každých %1$d rokov</string>
+    <!-- „Mesačne, 1. deň“ -->
+    <string name="repeat_with_detail">%1$s, %2$s</string>
+    <string name="repeat_day_of_month">%1$d. deň</string>
+    <string name="repeat_frequency">Frekvencia</string>
+    <string name="repeat_decrease">Menej</string>
+    <string name="repeat_increase">Viac</string>
+
+    <!-- Formulár opakovanej platby -->
+    <string name="rule_new">Nová opakovaná platba</string>
+    <string name="rule_edit">Upraviť platbu</string>
+    <string name="rule_name">Názov</string>
+    <string name="rule_amount">Suma</string>
+    <string name="rule_type">Typ</string>
+    <string name="rule_category">Kategória</string>
+    <string name="rule_category_pick">Vybrať kategóriu</string>
+    <string name="rule_repeat">Opakovanie</string>
+    <string name="rule_next">Ďalšia platba</string>
+    <string name="rule_next_now">Zapíše sa hneď po uložení.</string>
+    <string name="rule_end">Koniec</string>
+    <string name="rule_end_none">Bez konca</string>
+    <string name="rule_end_pick">Vybrať dátum</string>
+    <string name="rule_info_edit">Zmena platí od ďalšej platby. Už zapísané transakcie zostanú bez zmeny a dajú sa upraviť jednotlivo.</string>
+    <string name="rule_info_new">Appka zapíše transakciu sama v deň platby, pri najbližšom otvorení.</string>
+    <string name="rule_save_changes">Uložiť zmeny</string>
+    <string name="rule_pause">Pozastaviť</string>
+    <string name="rule_resume">Obnoviť</string>
+    <string name="rule_backfill_title">Zapísať spätné platby?</string>
+    <string name="rule_backfill_one">Po uložení sa spätne zapíše %1$d transakcia.</string>
+    <string name="rule_backfill_few">Po uložení sa spätne zapíšu %1$d transakcie.</string>
+    <string name="rule_backfill_many">Po uložení sa spätne zapíše %1$d transakcií.</string>
+    <string name="rule_delete_title">Zmazať opakovanú platbu?</string>
+    <string name="rule_delete_text">Už zapísané transakcie ostanú.</string>
+    <string name="rule_error_archived">Účet alebo kategória tejto platby sú archivované. Vyber aktívne a ulož zmeny.</string>
+    <string name="rule_error_generic">Platbu sa nepodarilo uložiť. Skontroluj polia.</string>
+    <string name="account_archive_rules">Pozastavia sa opakované platby: %1$s.</string>
 </resources>

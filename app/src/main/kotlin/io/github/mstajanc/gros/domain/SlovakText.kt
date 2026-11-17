@@ -71,6 +71,9 @@ object SlovakDates {
     fun weekdayDate(date: LocalDate, today: LocalDate): String =
         "${weekdays.getValue(date.dayOfWeek)} ${shortDate(date, today)}"
 
+    /** „pondelok“ – deň v týždni malým písmenom. */
+    fun weekdayName(date: LocalDate): String = weekdays.getValue(date.dayOfWeek).lowercase()
+
     /** „november“ */
     fun monthName(month: YearMonth): String = months[month.monthValue - 1]
 

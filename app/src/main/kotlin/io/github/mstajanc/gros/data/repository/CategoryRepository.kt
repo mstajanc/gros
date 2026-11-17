@@ -73,16 +73,21 @@ class CategoryRepository(private val db: GrosDatabase) {
 
     /**
      * Archivuje kategóriu. Archivácia hlavnej kategórie skryje aj jej podkategórie,
-     * ich vlastný príznak sa však nemení, takže obnovenie vráti pôvodný stav.
+     * ich vlastný príznak sa však nemení, takže obnovenie vráti pôvodný stav. Aktívne opakované platby
+     * v kategórii a jej podkategóriách sa pozastavia (pravidlo 10); vráti ich názvy.
      */
-    suspend fun archive(id: Long) {
-        db.withWriteTransaction {
-            val existing = require(id)
-            if (existing.archived) return@withWriteTransaction
-            CategoryRules.canArchive(existing.toDomain(), categories.countActiveMain(existing.kind)).throwIfViolated()
-            categories.update(existing.copy(archived = true))
-        }
+    suspend fun archive(id: Long): List<String> = db.withWriteTransaction {
+        val existing = require(id)
+        if (existing.archived) return@withWriteTransaction emptyList()
+        CategoryRules.canArchive(existing.toDomain(), categories.countActiveMain(existing.kind)).throwIfViolated()
+        categories.update(existing.copy(archived = true))
+        // Pravidlo 10 platí aj pre pravidlá zaradené v podkategóriách archivovanej hlavnej kategórie.
+        db.pauseRules(rules.getUsingCategories(listOf(id) + categories.getChildIds(id)))
     }
+
+    /** Názvy aktívnych opakovaných platieb, ktoré by archivácia kategórie pozastavila. */
+    suspend fun activeRulesUsing(id: Long): List<String> =
+        rules.getUsingCategories(listOf(id) + categories.getChildIds(id)).activeNames()
 
     suspend fun restore(id: Long) {
         db.withWriteTransaction {
