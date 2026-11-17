@@ -8,6 +8,7 @@ import io.github.mstajanc.gros.data.db.toEntity
 import io.github.mstajanc.gros.domain.NoteNormalizer
 import io.github.mstajanc.gros.domain.NoteSuggestions
 import io.github.mstajanc.gros.domain.TransactionFilter
+import io.github.mstajanc.gros.domain.model.Category
 import io.github.mstajanc.gros.domain.model.Transaction
 import io.github.mstajanc.gros.domain.model.TransactionDraft
 import io.github.mstajanc.gros.domain.rules.InvariantViolationException
@@ -44,9 +45,14 @@ class TransactionRepository(private val db: GrosDatabase, private val clock: Clo
 
     /**
      * Zoznam od najnovšej transakcie. [categoryIds] je už rozvinutý výber kategórie
-     * (hlavná + jej podkategórie), `null` = bez filtra kategórie.
+     * (hlavná + jej podkategórie), `null` = bez filtra kategórie. Hľadaný text sa porovná s poznámkou
+     * a s názvami kategórií [categories] (rozhodnutie C1).
      */
-    fun observeFiltered(filter: TransactionFilter, categoryIds: List<Long>?): Flow<List<Transaction>> =
+    fun observeFiltered(
+        filter: TransactionFilter,
+        categoryIds: List<Long>?,
+        categories: List<Category> = emptyList(),
+    ): Flow<List<Transaction>> =
         transactions.observeFiltered(
             from = filter.period.from,
             to = filter.period.to,
@@ -54,6 +60,7 @@ class TransactionRepository(private val db: GrosDatabase, private val clock: Clo
             filterCategories = categoryIds != null,
             categoryIds = categoryIds.orEmpty(),
             notePattern = NoteNormalizer.containsPattern(filter.query),
+            queryCategoryIds = TransactionFilter.categoryIdsMatching(filter.query, categories),
         ).map { list -> list.map { it.toDomain() } }
 
     fun observeRecent(limit: Int): Flow<List<Transaction>> =

@@ -92,7 +92,7 @@ private fun periodLabel(period: Period): String = when (period) {
 }
 
 @Composable
-fun TransactionsScreen(onEdit: (Long) -> Unit, contentPadding: PaddingValues) {
+fun TransactionsScreen(onEdit: (Long) -> Unit, contentPadding: PaddingValues, onBack: (() -> Unit)? = null) {
     val viewModel = grosViewModel { container, handle -> TransactionsViewModel(container, handle) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     var sheet by rememberSaveable { mutableStateOf<FilterSheet?>(null) }
@@ -108,7 +108,7 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, contentPadding: PaddingValues) {
                 if (state.searchActive) {
                     SearchBar(query = state.filter.query, onQuery = viewModel::setQuery, onClose = viewModel::closeSearch)
                 } else {
-                    ScreenHeader(title = stringResource(R.string.nav_transactions)) {
+                    ScreenHeader(title = stringResource(R.string.nav_transactions), onBack = onBack) {
                         CircleIconButton(R.drawable.ic_search, stringResource(R.string.search_open), viewModel::openSearch)
                     }
                 }

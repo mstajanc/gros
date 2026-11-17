@@ -127,7 +127,8 @@ interface TransactionDao {
 
     /**
      * Zoznam transakcií od najnovšej. Každý filter je nepovinný a dajú sa kombinovať:
-     * obdobie (vrátane oboch krajných dní), účet (aj ako cieľ prevodu), kategórie a hľadanie v poznámke.
+     * obdobie (vrátane oboch krajných dní), účet (aj ako cieľ prevodu), kategórie a hľadanie
+     * v poznámke alebo v názve kategórie ([queryCategoryIds] sú kategórie, ktorých názov hľadaný text obsahuje).
      */
     @Query(
         """
@@ -136,7 +137,7 @@ interface TransactionDao {
           AND (:to IS NULL OR date <= :to)
           AND (:accountId IS NULL OR accountId = :accountId OR toAccountId = :accountId)
           AND (:filterCategories = 0 OR categoryId IN (:categoryIds))
-          AND (:notePattern IS NULL OR noteSearch LIKE :notePattern ESCAPE '\')
+          AND (:notePattern IS NULL OR noteSearch LIKE :notePattern ESCAPE '\' OR categoryId IN (:queryCategoryIds))
         ORDER BY date DESC, createdAt DESC, id DESC
         """,
     )
@@ -147,6 +148,7 @@ interface TransactionDao {
         filterCategories: Boolean,
         categoryIds: List<Long>,
         notePattern: String?,
+        queryCategoryIds: List<Long>,
     ): Flow<List<TransactionEntity>>
 
     @Query("SELECT * FROM transactions ORDER BY date DESC, createdAt DESC, id DESC LIMIT :limit")

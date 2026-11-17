@@ -76,14 +76,16 @@ import kotlinx.coroutines.withTimeoutOrNull
 private object Routes {
     const val OVERVIEW = "overview"
     const val TRANSACTIONS = "transactions"
-    const val TRANSACTIONS_PATTERN = "transactions?accountId={accountId}"
+
+    /** Pohyby jedného účtu: samostatná obrazovka, nie záložka Transakcie. */
+    const val ACCOUNT_TRANSACTIONS_PATTERN = "accountTransactions/{accountId}"
     const val PLAN = "plan"
     const val REPORTS = "reports"
     const val ACCOUNTS = "accounts"
     const val ACCOUNT_PATTERN = "account?id={id}"
     const val TRANSACTION_PATTERN = "transaction?id={id}&duplicate={duplicate}&type={type}"
 
-    fun transactionsOfAccount(accountId: Long) = "transactions?accountId=$accountId"
+    fun transactionsOfAccount(accountId: Long) = "accountTransactions/$accountId"
     fun account(id: Long? = null) = "account?id=${id ?: -1}"
     fun transaction(id: Long? = null, duplicate: Boolean = false, type: TransactionType? = null) =
         "transaction?id=${id ?: -1}&duplicate=$duplicate&type=${type?.name.orEmpty()}"
@@ -153,18 +155,20 @@ private fun MainScreen() {
                     onEdit = { navController.navigate(Routes.transaction(id = it)) },
                 )
             }
+            composable(Routes.TRANSACTIONS) {
+                TransactionsScreen(
+                    contentPadding = padding,
+                    onEdit = { navController.navigate(Routes.transaction(id = it)) },
+                )
+            }
             composable(
-                Routes.TRANSACTIONS_PATTERN,
-                arguments = listOf(
-                    navArgument(TransactionsViewModel.ARG_ACCOUNT_ID) {
-                        type = NavType.LongType
-                        defaultValue = -1L
-                    },
-                ),
+                Routes.ACCOUNT_TRANSACTIONS_PATTERN,
+                arguments = listOf(navArgument(TransactionsViewModel.ARG_ACCOUNT_ID) { type = NavType.LongType }),
             ) {
                 TransactionsScreen(
                     contentPadding = padding,
                     onEdit = { navController.navigate(Routes.transaction(id = it)) },
+                    onBack = navController::popBackStack,
                 )
             }
             composable(Routes.PLAN) {
@@ -226,12 +230,15 @@ private fun MainScreen() {
     }
 }
 
-/** Prepnutie záložky: stav záložiek sa uchováva a v zásobníku je každá najviac raz. */
+/**
+ * Prepnutie záložky: zásobník sa vráti na Prehľad a záložka sa otvorí nad ním (Prehľad sám sebou).
+ * Stav záložiek sa zámerne neobnovuje: obnovený zásobník Prehľadu vedel vrátiť naposledy otvorenú
+ * obrazovku a záložka Prehľad sa potom nedala otvoriť.
+ */
 private fun NavHostController.navigateToTab(route: String) {
     navigate(route) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
+        popUpTo(graph.findStartDestination().id)
         launchSingleTop = true
-        restoreState = true
     }
 }
 
@@ -270,9 +277,9 @@ private val RIGHT_TABS = listOf(
 /** Spodná lišta: Prehľad · Transakcie · + · Plán · Reporty. */
 @Composable
 private fun BottomBar(route: String, onTab: (String) -> Unit, onAdd: () -> Unit) {
-    // Účty sa spravujú z Prehľadu, preto patria pod jeho záložku.
+    // Účty a pohyby účtu sa otvárajú z Prehľadu, preto patria pod jeho záložku.
     val selected = when {
-        route.startsWith(Routes.TRANSACTIONS) -> Routes.TRANSACTIONS
+        route == Routes.TRANSACTIONS -> Routes.TRANSACTIONS
         route == Routes.PLAN -> Routes.PLAN
         route == Routes.REPORTS -> Routes.REPORTS
         else -> Routes.OVERVIEW

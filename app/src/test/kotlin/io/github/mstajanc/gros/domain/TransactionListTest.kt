@@ -131,6 +131,23 @@ class TransactionFilterTest {
         assertEquals(listOf(2L), TransactionFilter.categoryIds(2, all))
         assertEquals(listOf(4L), TransactionFilter.categoryIds(4, all))
     }
+
+    @Test
+    fun `search text matches category names and their main category`() {
+        val car = Category(id = 1, name = "Auto", kind = CategoryKind.EXPENSE, color = 2)
+        val fuel = Category(id = 2, parentId = 1, name = "Tankovanie", kind = CategoryKind.EXPENSE, color = 2)
+        val service = Category(id = 3, parentId = 1, name = "Servis", kind = CategoryKind.EXPENSE, color = 2)
+        val food = Category(id = 4, name = "Potraviny", kind = CategoryKind.EXPENSE, color = 0)
+        val clothes = Category(id = 5, name = "Oblečenie", kind = CategoryKind.EXPENSE, color = 1)
+        val all = listOf(car, fuel, service, food, clothes)
+
+        assertEquals(setOf(2L), TransactionFilter.categoryIdsMatching("TANK", all).toSet())
+        // Názov hlavnej kategórie zahŕňa aj jej podkategórie.
+        assertEquals(setOf(1L, 2L, 3L), TransactionFilter.categoryIdsMatching("auto", all).toSet())
+        assertEquals(setOf(5L), TransactionFilter.categoryIdsMatching("oblecenie", all).toSet())
+        assertTrue(TransactionFilter.categoryIdsMatching("xyz", all).isEmpty())
+        assertTrue(TransactionFilter.categoryIdsMatching("  ", all).isEmpty())
+    }
 }
 
 class TransactionFormRulesTest {

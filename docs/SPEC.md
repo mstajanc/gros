@@ -376,3 +376,12 @@ Schválené Mirecom. Pri konflikte s mockupom alebo so starším textom vyššie
 - Keystore vytvára Mirec sám príkazom `keytool`; heslo nikdy nie je v repozitári ani v chate, cesta a údaje sú v súbore mimo gitu.
 - V PATH nie je `java`; build používa JDK z Android Studia (`C:\Program Files\Android\Android Studio\jbr`). Verzie knižníc sa overia online na začiatku M1.
 - Obrazovky bez mockupu (sprievodca, úprava účtu, výbery filtrov, zoznam „Viac“, podkategórie, poznámka s našepkávaním, formulár rozpočtu, ročný report, Nastavenia, kategórie, záloha, zámok, widget, svetlá téma) sa popíšu v pláne príslušného míľnika.
+
+## Rozhodnutia po teste M2 (17. 11. 2026)
+
+Schválené Mirecom. Majú prednosť pred mockupmi aj starším textom.
+
+- C1 Hľadanie v Transakciách nájde text v poznámke aj v názve kategórie alebo jej hlavnej kategórie („tank“ nájde všetky Auto · Tankovanie), bez ohľadu na veľkosť písmen a diakritiku.
+- C2 Kategórie vo formulári transakcie sú zaoblené čipy široké podľa názvu, v riadkoch za sebou, text vždy na jeden riadok; ostáva prvých 7 hlavných kategórií a „Viac“.
+- C3 Číselná klávesnica: pri novej transakcii je otvorená a skryje sa po výbere kategórie (ak je suma zadaná) alebo po ťuknutí na iné pole; pri úprave a duplikáte je skrytá. Ťuknutie na sumu ju vždy otvorí. Uložiť je stále prichytené dole.
+- C4 Správa kategórií a podkategórií ostáva v M5 (rozhodnutie A10 platí).

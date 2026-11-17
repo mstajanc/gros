@@ -61,8 +61,10 @@ class TransactionsViewModel(private val container: AppContainer, handle: SavedSt
 
     private val list = combine(controls, categories) { controls, categories ->
         val ids = controls.filter.categoryId?.let { TransactionFilter.categoryIds(it, categories) }
-        controls.filter to ids
-    }.flatMapLatest { (filter, ids) -> container.transactionRepository.observeFiltered(filter, ids) }
+        Triple(controls.filter, ids, categories)
+    }.flatMapLatest { (filter, ids, categories) ->
+        container.transactionRepository.observeFiltered(filter, ids, categories)
+    }
 
     val state: StateFlow<TransactionsState> = combine(
         controls,

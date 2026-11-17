@@ -97,6 +97,20 @@ data class TransactionFilter(
         /** Výber hlavnej kategórie zahŕňa aj jej podkategórie; podkategória len seba. */
         fun categoryIds(categoryId: Long, categories: List<Category>): List<Long> =
             listOf(categoryId) + categories.filter { it.parentId == categoryId }.map { it.id }
+
+        /**
+         * Kategórie, ktorých názov alebo názov ich hlavnej kategórie obsahuje hľadaný text
+         * (bez ohľadu na veľkosť písmen a diakritiku; rozhodnutie C1).
+         */
+        fun categoryIdsMatching(query: String, categories: List<Category>): List<Long> {
+            val needle = NoteNormalizer.toSearch(query) ?: return emptyList()
+            val byId = categories.associateBy { it.id }
+            return categories.filter { category ->
+                val parent = category.parentId?.let(byId::get)
+                NoteNormalizer.normalize(category.name).contains(needle) ||
+                    (parent != null && NoteNormalizer.normalize(parent.name).contains(needle))
+            }.map { it.id }
+        }
     }
 }
 

@@ -2,22 +2,21 @@ package io.github.mstajanc.gros.ui.transaction
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -48,22 +47,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.mstajanc.gros.R
 import io.github.mstajanc.gros.domain.RelativeDay
 import io.github.mstajanc.gros.domain.SlovakDates
-import io.github.mstajanc.gros.domain.model.Category
 import io.github.mstajanc.gros.domain.model.TransactionType
 import io.github.mstajanc.gros.ui.common.AmountKeypad
 import io.github.mstajanc.gros.ui.common.AmountText
 import io.github.mstajanc.gros.ui.common.CenteredContent
 import io.github.mstajanc.gros.ui.common.FieldTile
-import io.github.mstajanc.gros.ui.common.FilterChip
 import io.github.mstajanc.gros.ui.common.GrosTextField
 import io.github.mstajanc.gros.ui.common.OptionSheet
 import io.github.mstajanc.gros.ui.common.PrimaryButton
@@ -82,8 +79,8 @@ import java.time.ZoneOffset
 
 private val TYPES = listOf(TransactionType.EXPENSE, TransactionType.INCOME, TransactionType.TRANSFER)
 
-/** Počet dlaždíc hlavných kategórií pred dlaždicou „Viac“. */
-private const val GRID_CATEGORIES = 7
+/** Počet hlavných kategórií pred čipom „Viac“. */
+private const val SHOWN_CATEGORIES = 7
 
 private enum class Picker { ACCOUNT, TO_ACCOUNT, DATE, ALL_CATEGORIES }
 
@@ -102,6 +99,12 @@ fun TransactionFormScreen(onClose: () -> Unit, onDuplicate: () -> Unit) {
 
     var picker by rememberSaveable { mutableStateOf<Picker?>(null) }
     var noteFocused by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val openPicker: (Picker) -> Unit = {
+        focusManager.clearFocus()
+        viewModel.hideKeypad()
+        picker = it
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         CenteredContent(modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
@@ -110,20 +113,15 @@ fun TransactionFormScreen(onClose: () -> Unit, onDuplicate: () -> Unit) {
 
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                 // Pri výške okna ≥ 600 dp sú klávesnica a Uložiť prichytené dole; inak sa posúva všetko.
+                // Polia formulára sú v oboch prípadoch na rovnakom mieste, aby sa pri zmene výšky
+                // (napr. otvorenie systémovej klávesnice) nestratil rozpísaný text ani fokus.
                 val pinned = maxHeight >= 600.dp
-                val fields: @Composable ColumnScope.() -> Unit = {
-                    FormFields(
-                        state = state,
-                        viewModel = viewModel,
-                        onPick = { picker = it },
-                        onNoteFocus = { noteFocused = it },
-                    )
-                }
                 val bottom: @Composable ColumnScope.() -> Unit = {
                     // Kým sa píše poznámka systémovou klávesnicou, klávesnica appky ustúpi.
-                    if (!noteFocused) AmountKeypad(input = state.amount, onInput = viewModel::onAmount)
+                    if (state.draft?.keypadVisible == true && !noteFocused) {
+                        AmountKeypad(input = state.amount, onInput = viewModel::onAmount)
+                    }
                     PrimaryButton(stringResource(R.string.action_save), onClick = viewModel::save, enabled = state.canSave)
-                    // Pri úprave sú pod Uložiť vždy viditeľné Duplikovať a Zmazať.
                     if (state.isEdit) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             SecondaryButton(
@@ -149,25 +147,31 @@ fun TransactionFormScreen(onClose: () -> Unit, onDuplicate: () -> Unit) {
                         backIcon = R.drawable.ic_x,
                         backDescription = stringResource(R.string.action_close),
                     )
+                    Column(
+                        modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        FormFields(
+                            state = state,
+                            viewModel = viewModel,
+                            onPick = openPicker,
+                            onAmountClick = {
+                                focusManager.clearFocus()
+                                viewModel.onToggleKeypad()
+                            },
+                            onNoteFocus = { focused ->
+                                noteFocused = focused
+                                if (focused) viewModel.hideKeypad()
+                            },
+                        )
+                        if (!pinned) bottom()
+                    }
                     if (pinned) {
                         Column(
-                            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.spacedBy(14.dp),
-                            content = fields,
-                        )
-                        Column(
-                            modifier = Modifier.padding(top = 10.dp, bottom = 12.dp),
+                            modifier = Modifier.padding(bottom = 12.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                             content = bottom,
                         )
-                    } else {
-                        Column(
-                            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(14.dp),
-                        ) {
-                            fields()
-                            bottom()
-                        }
                     }
                 }
             }
@@ -231,6 +235,7 @@ private fun ColumnScope.FormFields(
     state: TransactionFormState,
     viewModel: TransactionFormViewModel,
     onPick: (Picker) -> Unit,
+    onAmountClick: () -> Unit,
     onNoteFocus: (Boolean) -> Unit,
 ) {
     val draft = state.draft ?: return
@@ -249,13 +254,31 @@ private fun ColumnScope.FormFields(
         enabled = { TYPES[it] != TransactionType.TRANSFER || state.transferAvailable },
     )
 
-    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            stringResource(R.string.form_amount),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    // Ťuknutie na sumu otvorí alebo skryje klávesnicu appky (rozhodnutie C3).
+    val amountLabel = stringResource(R.string.form_amount)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(GrosShapes.cardMedium)
+            .clickable(
+                role = Role.Button,
+                onClickLabel = stringResource(
+                    if (draft.keypadVisible) R.string.form_amount_hide_keypad else R.string.form_amount_edit,
+                ),
+                onClick = onAmountClick,
+            )
+            .padding(vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(amountLabel, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         AmountText(state.amount.display + " €", style = MaterialTheme.typography.displayLarge)
+        if (!draft.keypadVisible) {
+            Text(
+                stringResource(R.string.form_amount_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 
     if (isTransfer) {
@@ -266,15 +289,12 @@ private fun ColumnScope.FormFields(
             modifier = Modifier.fillMaxWidth(),
         )
     } else {
-        CategoryGrid(state, onCategory = viewModel::onCategory, onMore = { onPick(Picker.ALL_CATEGORIES) })
+        CategoryChips(state, onCategory = viewModel::onCategory, onMore = { onPick(Picker.ALL_CATEGORIES) })
         val subcategories = state.subcategories
         if (subcategories.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+            ChipSection(stringResource(R.string.form_subcategory)) {
                 subcategories.forEach { sub ->
-                    FilterChip(
+                    ChoiceChip(
                         text = sub.name,
                         selected = sub.id == selection.subcategoryId,
                         onClick = { viewModel.onSubcategory(sub.id) },
@@ -307,7 +327,6 @@ private fun ColumnScope.FormFields(
         onSuggestion = viewModel::onSuggestion,
         onFocus = onNoteFocus,
     )
-
 }
 
 @Composable
@@ -320,72 +339,68 @@ private fun dateFieldText(date: LocalDate, today: LocalDate): String {
     }
 }
 
-/** Mriežka 2 × 4: prvých 7 hlavných kategórií v poradí používateľa a dlaždica „Viac“. */
+/** Popis a čipy v riadkoch za sebou; čipy sú široké podľa textu (rozhodnutie C2). */
 @Composable
-private fun CategoryGrid(state: TransactionFormState, onCategory: (Long) -> Unit, onMore: () -> Unit) {
-    val all = state.mainCategories
-    val selectedId = state.selection?.categoryId
-    val shown = all.take(GRID_CATEGORIES)
-    // Vybraná kategória mimo prvých siedmich sa ukáže na mieste dlaždice „Viac“.
-    val selectedElsewhere = all.firstOrNull { it.id == selectedId && it !in shown }
-    val cells: List<Category?> = shown + List(GRID_CATEGORIES - shown.size) { null }
-
+private fun ChipSection(label: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            stringResource(R.string.form_category),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        (cells.map { it?.let { category -> GridCell.Item(category) } ?: GridCell.Empty } + GridCell.More)
-            .chunked(4)
-            .forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { cell ->
-                        when (cell) {
-                            is GridCell.Item -> CategoryTile(
-                                text = cell.category.name,
-                                selected = cell.category.id == selectedId,
-                                outlinedOnly = false,
-                                onClick = { onCategory(cell.category.id) },
-                                modifier = Modifier.weight(1f),
-                            )
-
-                            GridCell.Empty -> Spacer(Modifier.weight(1f))
-                            GridCell.More -> CategoryTile(
-                                text = selectedElsewhere?.name ?: stringResource(R.string.form_more),
-                                selected = selectedElsewhere != null,
-                                outlinedOnly = true,
-                                onClick = onMore,
-                                modifier = Modifier.weight(1f),
-                                description = stringResource(R.string.form_all_categories),
-                            )
-                        }
-                    }
-                }
-            }
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            content()
+        }
     }
 }
 
-private sealed interface GridCell {
-    data class Item(val category: Category) : GridCell
-    data object Empty : GridCell
-    data object More : GridCell
+/** Prvých 7 hlavných kategórií v poradí používateľa a čip „Viac“ so zoznamom všetkých. */
+@Composable
+private fun CategoryChips(state: TransactionFormState, onCategory: (Long) -> Unit, onMore: () -> Unit) {
+    val all = state.mainCategories
+    val selectedId = state.selection?.categoryId
+    val shown = all.take(SHOWN_CATEGORIES)
+    // Vybraná kategória mimo prvých siedmich sa ukáže na mieste čipu „Viac“.
+    val selectedElsewhere = all.firstOrNull { it.id == selectedId && it !in shown }
+
+    ChipSection(stringResource(R.string.form_category)) {
+        shown.forEach { category ->
+            ChoiceChip(category.name, selected = category.id == selectedId, onClick = { onCategory(category.id) })
+        }
+        if (all.size > SHOWN_CATEGORIES) {
+            ChoiceChip(
+                text = selectedElsewhere?.name ?: stringResource(R.string.form_more),
+                selected = selectedElsewhere != null,
+                onClick = onMore,
+                outlinedOnly = true,
+                description = stringResource(R.string.form_all_categories),
+            )
+        }
+    }
 }
 
+/** Zaoblený čip voľby: text vždy na jeden riadok, vybraný má akcentový obrys. */
 @Composable
-private fun CategoryTile(
+private fun ChoiceChip(
     text: String,
     selected: Boolean,
-    outlinedOnly: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+    outlinedOnly: Boolean = false,
     description: String? = null,
 ) {
     val scheme = MaterialTheme.colorScheme
-    Box(
-        modifier = modifier
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = when {
+            selected -> scheme.primary
+            outlinedOnly -> scheme.onSurfaceVariant
+            else -> scheme.onSurface
+        },
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
             .heightIn(min = 48.dp)
-            .clip(GrosShapes.cardSmall)
+            .clip(GrosShapes.pill)
             .background(
                 when {
                     selected -> scheme.primaryContainer
@@ -395,29 +410,18 @@ private fun CategoryTile(
             )
             .then(
                 when {
-                    selected -> Modifier.outlined(scheme.primary, GrosShapes.cardSmall)
-                    outlinedOnly -> Modifier.outlined(scheme.outline, GrosShapes.cardSmall)
+                    selected -> Modifier.outlined(scheme.primary, GrosShapes.pill)
+                    outlinedOnly -> Modifier.outlined(scheme.outline, GrosShapes.pill)
                     else -> Modifier
                 },
             )
             .clickable(role = Role.Button, onClick = onClick)
-            .then(if (description != null && !selected) Modifier.semantics { contentDescription = description } else Modifier)
-            .padding(horizontal = 4.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text,
-            style = MaterialTheme.typography.labelMedium,
-            color = when {
-                selected -> scheme.primary
-                outlinedOnly -> scheme.onSurfaceVariant
-                else -> scheme.onSurface
-            },
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
+            .semantics {
+                this.selected = selected
+                if (description != null && !selected) contentDescription = description
+            }
+            .padding(horizontal = 18.dp, vertical = 13.dp),
+    )
 }
 
 /** Poznámka je nepovinná a predvolene skrytá za „+ Poznámka“; pri písaní našepkáva predošlé zápisy. */
@@ -445,7 +449,9 @@ private fun NoteField(
     }
 
     val focusRequester = remember { FocusRequester() }
+    val bringIntoView = remember { BringIntoViewRequester() }
     val focusManager = LocalFocusManager.current
+    var focused by remember { mutableStateOf(false) }
     val label = stringResource(R.string.form_note)
     // Pole sa otvára ťuknutím na „+ Poznámka“, preto hneď dostane fokus; pri úprave nie.
     var requestFocus by rememberSaveable { mutableStateOf(draft.note.isEmpty()) }
@@ -455,8 +461,12 @@ private fun NoteField(
             requestFocus = false
         }
     }
+    // Pole a návrhy pod ním sa posunú nad systémovú klávesnicu.
+    LaunchedEffect(focused, suggestions) {
+        if (focused) bringIntoView.bringIntoView()
+    }
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier = Modifier.bringIntoViewRequester(bringIntoView), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -474,7 +484,10 @@ private fun NoteField(
                     .fillMaxWidth()
                     .heightIn(min = 28.dp)
                     .focusRequester(focusRequester)
-                    .onFocusChanged { onFocus(it.isFocused) },
+                    .onFocusChanged {
+                        focused = it.isFocused
+                        onFocus(it.isFocused)
+                    },
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done,
@@ -483,16 +496,22 @@ private fun NoteField(
             )
         }
         if (suggestions.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                suggestions.forEach { suggestion ->
-                    FilterChip(text = suggestion, selected = false, onClick = { onSuggestion(suggestion) })
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    stringResource(R.string.form_note_suggestions),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    suggestions.forEach { suggestion ->
+                        ChoiceChip(text = suggestion, selected = false, onClick = { onSuggestion(suggestion) })
+                    }
                 }
             }
         }
-        Spacer(Modifier.height(0.dp))
     }
 }
 

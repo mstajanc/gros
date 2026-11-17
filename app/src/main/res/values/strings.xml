@@ -64,8 +64,8 @@
     <string name="period_previous">Predchádzajúce obdobie</string>
     <string name="period_next">Ďalšie obdobie</string>
     <string name="search_open">Hľadať</string>
-    <string name="search_hint">Hľadať v poznámkach</string>
-    <string name="search_info">Hľadá sa v poznámkach naprieč všetkými účtami.</string>
+    <string name="search_hint">Hľadať v poznámkach a kategóriách</string>
+    <string name="search_info">Hľadá sa v poznámkach a názvoch kategórií naprieč všetkými účtami.</string>
     <string name="list_empty">Žiadne transakcie pre tento výber.</string>
     <string name="snackbar_saved">Uložené</string>
     <string name="snackbar_deleted">Transakcia zmazaná</string>
@@ -74,6 +74,11 @@
     <string name="form_new">Nová transakcia</string>
     <string name="form_edit">Úprava transakcie</string>
     <string name="form_amount">Suma</string>
+    <string name="form_amount_hint">Ťuknutím zmeníš sumu</string>
+    <string name="form_amount_edit">zmeniť sumu</string>
+    <string name="form_amount_hide_keypad">skryť klávesnicu</string>
+    <string name="form_subcategory">Podkategória (nepovinné)</string>
+    <string name="form_note_suggestions">Predošlé poznámky</string>
     <string name="form_category">Kategória</string>
     <string name="form_more">Viac</string>
     <string name="form_all_categories">Všetky kategórie</string>

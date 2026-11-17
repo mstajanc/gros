@@ -29,7 +29,7 @@ class TransactionQueryTest : DatabaseTest() {
     ): List<Transaction> {
         val all = categories.observeCategories().first()
         val ids = categoryId?.let { TransactionFilter.categoryIds(it, all) }
-        return transactions.observeFiltered(TransactionFilter(period, accountId, categoryId, query), ids).first()
+        return transactions.observeFiltered(TransactionFilter(period, accountId, categoryId, query), ids, all).first()
     }
 
     @Test
@@ -106,6 +106,22 @@ class TransactionQueryTest : DatabaseTest() {
         assertEquals(1_290 + 18_900 + 5_679L, TransactionList.summarize(found).expenseCents)
         assertEquals(1, list(query = "SKOLSKA").size)
         assertEquals(1, list(query = "školská").size)
+    }
+
+    @Test
+    fun `search finds category and subcategory names as well as notes`() = runTest {
+        val accountId = account()
+        val car = expenseCategory("Auto", color = 2)
+        val fuel = expenseCategory("Tankovanie", parentId = car)
+        val food = expenseCategory("Potraviny")
+        val inSub = transactions.create(expense(accountId, fuel, 6_120))
+        val inMain = transactions.create(expense(accountId, car, 5_000))
+        val noteOnly = transactions.create(expense(accountId, food, 1_000, note = "tankovanie kanistra"))
+        transactions.create(expense(accountId, food, 4_230, note = "Lidl"))
+
+        assertEquals(setOf(inSub, noteOnly), list(query = "TANK").map { it.id }.toSet())
+        assertEquals(setOf(inSub, inMain), list(query = "auto").map { it.id }.toSet())
+        assertEquals(6_120 + 1_000L, TransactionList.summarize(list(query = "tank")).expenseCents)
     }
 
     @Test

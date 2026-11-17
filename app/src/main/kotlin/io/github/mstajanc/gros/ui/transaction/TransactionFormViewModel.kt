@@ -17,12 +17,14 @@ import io.github.mstajanc.gros.domain.model.TransactionType
 import io.github.mstajanc.gros.domain.rules.InvariantViolationException
 import io.github.mstajanc.gros.ui.common.SnackbarEvent
 import java.time.LocalDate
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -35,6 +37,8 @@ data class FormDraft(
     val date: LocalDate,
     val note: String = "",
     val noteVisible: Boolean = false,
+    /** Číselná klávesnica appky je otvorená (rozhodnutie C3). */
+    val keypadVisible: Boolean = true,
 )
 
 data class TransactionFormState(
@@ -101,7 +105,13 @@ class TransactionFormViewModel(
 
     private val transactions = container.transactionRepository
     private val draft = MutableStateFlow(restoreDraft())
-    private val suggestions = MutableStateFlow<List<String>>(emptyList())
+    private val noteInput = MutableStateFlow("")
+
+    /** Návrhy poznámky k aktuálne písanému textu; starší dopyt sa pri ďalšom znaku zahodí. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val suggestions = noteInput.mapLatest { input ->
+        transactions.suggestNotes(input).filter { it != input.trim() }
+    }
     private var original: Transaction? = null
 
     private val _events = Channel<FormEvent>(Channel.BUFFERED)
@@ -150,6 +160,8 @@ class TransactionFormViewModel(
                 date = if (duplicate) today else source.date,
                 note = source.note.orEmpty(),
                 noteVisible = source.note != null,
+                // Pri úprave a duplikáte je suma zadaná, klávesnica ostáva skrytá.
+                keypadVisible = false,
             )
         }
         val accounts = container.accountRepository.observeAccounts().first()
@@ -186,10 +198,27 @@ class TransactionFormViewModel(
 
     fun onAmount(input: AmountInput) = change { it.copy(amountText = input.text) }
 
-    /** Výber hlavnej kategórie zruší podkategóriu; tá je vždy nepovinná. */
-    fun onCategory(categoryId: Long) = changeSelection {
-        if (it.categoryId == categoryId) it else it.copy(categoryId = categoryId, subcategoryId = null)
+    /**
+     * Výber hlavnej kategórie zruší podkategóriu; tá je vždy nepovinná. Ak je suma zadaná,
+     * klávesnica sa skryje, aby bol vidieť zvyšok formulára.
+     */
+    fun onCategory(categoryId: Long) = change { draft ->
+        val selection = draft.selection
+        draft.copy(
+            selection = if (selection.categoryId == categoryId) {
+                selection
+            } else {
+                selection.copy(categoryId = categoryId, subcategoryId = null)
+            },
+            keypadVisible = draft.keypadVisible && AmountInput(draft.amountText).cents == 0L,
+        )
     }
+
+    /** Ťuknutie na sumu klávesnicu otvorí, druhé ťuknutie ju skryje. */
+    fun onToggleKeypad() = change { it.copy(keypadVisible = !it.keypadVisible) }
+
+    /** Ťuknutie na iné pole (účet, dátum, poznámka) klávesnicu skryje. */
+    fun hideKeypad() = change { if (it.keypadVisible) it.copy(keypadVisible = false) else it }
 
     /** Druhé ťuknutie na vybranú podkategóriu ju odznačí. */
     fun onSubcategory(subcategoryId: Long) = changeSelection {
@@ -206,20 +235,17 @@ class TransactionFormViewModel(
         if (TransactionFormRules.isDateAllowed(date, container.today())) change { it.copy(date = date) }
     }
 
-    fun onShowNote() = change { it.copy(noteVisible = true) }
+    fun onShowNote() = change { it.copy(noteVisible = true, keypadVisible = false) }
 
     fun onNote(note: String) {
         change { it.copy(note = note) }
-        viewModelScope.launch {
-            val found = transactions.suggestNotes(note)
-            // Návrh zhodný s tým, čo je už napísané, nič nepridáva.
-            suggestions.value = found.filter { it != note.trim() }
-        }
+        noteInput.value = note
     }
 
+    /** Doplnenie celej poznámky; návrh zhodný s napísaným textom sa už neponúka. */
     fun onSuggestion(note: String) {
         change { it.copy(note = note) }
-        suggestions.value = emptyList()
+        noteInput.value = note
     }
 
     fun save() {
@@ -282,6 +308,7 @@ class TransactionFormViewModel(
         handle[KEY_DATE] = value.date.toString()
         handle[KEY_NOTE] = value.note
         handle[KEY_NOTE_VISIBLE] = value.noteVisible
+        handle[KEY_KEYPAD] = value.keypadVisible
     }
 
     private fun restoreDraft(): FormDraft? {
@@ -298,6 +325,7 @@ class TransactionFormViewModel(
             date = LocalDate.parse(handle.get<String>(KEY_DATE) ?: container.today().toString()),
             note = handle[KEY_NOTE] ?: "",
             noteVisible = handle[KEY_NOTE_VISIBLE] ?: false,
+            keypadVisible = handle[KEY_KEYPAD] ?: true,
         )
     }
 
@@ -316,5 +344,6 @@ class TransactionFormViewModel(
         private const val KEY_DATE = "draft_date"
         private const val KEY_NOTE = "draft_note"
         private const val KEY_NOTE_VISIBLE = "draft_note_visible"
+        private const val KEY_KEYPAD = "draft_keypad"
     }
 }
