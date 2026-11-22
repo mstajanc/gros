@@ -45,18 +45,24 @@ class TransactionsViewModel(private val container: AppContainer, handle: SavedSt
 
     private val initialAccountId: Long? = handle.get<Long>(ARG_ACCOUNT_ID)?.takeIf { it > 0 }
     private val initialAllPeriod: Boolean = handle.get<Boolean>(ARG_ALL_PERIOD) ?: false
+    private val initialCategoryId: Long? = handle.get<Long>(ARG_CATEGORY_ID)?.takeIf { it > 0 }
+    private val initialExact: Boolean = handle.get<Boolean>(ARG_EXACT) ?: false
+    private val initialPeriod: Period? = handle.get<String>(ARG_PERIOD)?.let(::decodePeriod)
 
     private val controls = MutableStateFlow(
         Controls(
             filter = TransactionFilter(
                 // Predvolený je aktuálny mesiac; ťuknutie na účet a „Zobraziť“ zo snackbaru opakovaných
                 // platieb otvárajú Celé obdobie (rozhodnutie A4).
-                period = if (initialAccountId != null || initialAllPeriod) {
+                // Z Reportov sa prenesie obdobie reportu.
+                period = initialPeriod ?: if (initialAccountId != null || initialAllPeriod) {
                     Period.All
                 } else {
                     Period.Month(YearMonth.from(container.today()))
                 },
                 accountId = initialAccountId,
+                categoryId = initialCategoryId,
+                exactCategory = initialExact,
             ),
             searchActive = false,
             periodBeforeSearch = null,
@@ -66,7 +72,7 @@ class TransactionsViewModel(private val container: AppContainer, handle: SavedSt
     private val categories = container.categoryRepository.observeCategories()
 
     private val list = combine(controls, categories) { controls, categories ->
-        val ids = controls.filter.categoryId?.let { TransactionFilter.categoryIds(it, categories) }
+        val ids = controls.filter.categoryIds(categories)
         Triple(controls.filter, ids, categories)
     }.flatMapLatest { (filter, ids, categories) ->
         container.transactionRepository.observeFiltered(filter, ids, categories)
@@ -102,7 +108,7 @@ class TransactionsViewModel(private val container: AppContainer, handle: SavedSt
     fun previousPeriod() = updateFilter { it.copy(period = it.period.previous()) }
     fun nextPeriod() = updateFilter { it.copy(period = it.period.next()) }
     fun setAccount(accountId: Long?) = updateFilter { it.copy(accountId = accountId) }
-    fun setCategory(categoryId: Long?) = updateFilter { it.copy(categoryId = categoryId) }
+    fun setCategory(categoryId: Long?) = updateFilter { it.copy(categoryId = categoryId, exactCategory = false) }
     fun setQuery(query: String) = updateFilter { it.copy(query = query) }
 
     /** Hľadanie prepne obdobie na Celé obdobie; po zatvorení sa vráti pôvodné. */
@@ -135,5 +141,22 @@ class TransactionsViewModel(private val container: AppContainer, handle: SavedSt
     companion object {
         const val ARG_ACCOUNT_ID = "accountId"
         const val ARG_ALL_PERIOD = "allPeriod"
+        const val ARG_CATEGORY_ID = "categoryId"
+        const val ARG_EXACT = "exact"
+        const val ARG_PERIOD = "period"
+
+        /** Obdobie v navigačnom argumente: „2026-11“ (mesiac), „2026“ (rok) alebo „all“. */
+        fun encodePeriod(period: Period): String = when (period) {
+            is Period.Month -> period.month.toString()
+            is Period.Year -> period.year.toString()
+            Period.All -> "all"
+        }
+
+        fun decodePeriod(text: String): Period? = when {
+            text == "all" -> Period.All
+            text.length == 7 -> runCatching { Period.Month(YearMonth.parse(text)) }.getOrNull()
+            text.length == 4 -> text.toIntOrNull()?.let { Period.Year(it) }
+            else -> null
+        }
     }
 }

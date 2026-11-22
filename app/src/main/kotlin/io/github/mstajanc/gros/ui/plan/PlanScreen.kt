@@ -92,7 +92,13 @@ class PlanViewModel(container: AppContainer) : ViewModel() {
 }
 
 @Composable
-fun PlanScreen(contentPadding: PaddingValues, onAddRule: () -> Unit, onEditRule: (Long) -> Unit) {
+fun PlanScreen(
+    contentPadding: PaddingValues,
+    onAddRule: () -> Unit,
+    onEditRule: (Long) -> Unit,
+    onAddBudget: () -> Unit,
+    onEditBudget: (Long) -> Unit,
+) {
     val viewModel = grosViewModel { container, _ -> PlanViewModel(container) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -113,12 +119,7 @@ fun PlanScreen(contentPadding: PaddingValues, onAddRule: () -> Unit, onEditRule:
                 onSelect = { tab = it },
             )
             if (tab == 1) {
-                Text(
-                    stringResource(R.string.placeholder_budgets),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
+                BudgetsTab(onAdd = onAddBudget, onEdit = onEditBudget)
                 return@Column
             }
             if (!state.loaded) return@Column

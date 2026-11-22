@@ -7,6 +7,7 @@ import io.github.mstajanc.gros.data.repository.AccountRepository
 import io.github.mstajanc.gros.data.repository.BudgetRepository
 import io.github.mstajanc.gros.data.repository.CategoryRepository
 import io.github.mstajanc.gros.data.repository.RecurringRuleRepository
+import io.github.mstajanc.gros.data.repository.ReportRepository
 import io.github.mstajanc.gros.data.repository.SetupRepository
 import io.github.mstajanc.gros.data.repository.TransactionRepository
 import io.github.mstajanc.gros.data.settings.SettingsRepository
@@ -34,6 +35,7 @@ class AppContainer(context: Context) {
     val recurringRuleRepository: RecurringRuleRepository by lazy { RecurringRuleRepository(database, clock) }
     val recurringGenerator: RecurringGenerator by lazy { RecurringGenerator(database, clock) }
     val budgetRepository: BudgetRepository by lazy { BudgetRepository(database) }
+    val reportRepository: ReportRepository by lazy { ReportRepository(database) }
     val setupRepository: SetupRepository by lazy { SetupRepository(database) }
     val settingsRepository: SettingsRepository by lazy { SettingsRepository(appContext) }
 

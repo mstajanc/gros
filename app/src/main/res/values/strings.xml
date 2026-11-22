@@ -18,8 +18,7 @@
     <string name="nav_plan">Plán</string>
     <string name="nav_reports">Reporty</string>
     <string name="nav_add">Nová transakcia</string>
-        <string name="placeholder_reports">Reporty pribudnú v míľniku M4.</string>
-
+    
     <!-- Dni, typy a štítky -->
     <string name="day_today">Dnes</string>
     <string name="day_yesterday">Včera</string>
@@ -180,7 +179,6 @@
     <string name="plan_finished">ukončená</string>
     <string name="plan_add_rule">+ Nová opakovaná platba</string>
     <string name="plan_empty">Zatiaľ žiadne opakované platby. Nájom, výplatu či sporenie zapíše appka sama v deň splatnosti.</string>
-    <string name="placeholder_budgets">Rozpočty pribudnú v míľniku M4.</string>
 
     <!-- Opakovanie: 1 / 2–4 / 5+ -->
     <string name="repeat_weekly">Týždenne</string>
@@ -227,4 +225,38 @@
     <string name="rule_error_archived">Účet alebo kategória tejto platby sú archivované. Vyber aktívne a ulož zmeny.</string>
     <string name="rule_error_generic">Platbu sa nepodarilo uložiť. Skontroluj polia.</string>
     <string name="account_archive_rules">Pozastavia sa opakované platby: %1$s.</string>
+
+    <!-- Rozpočty a Reporty (M4) -->
+    <string name="filter_category_exact">%1$s · bez podkategórie</string>
+    <string name="budget_summary_period">%1$s · %2$s</string>
+    <string name="budget_days_one">ešte %1$d deň</string>
+    <string name="budget_days_few">ešte %1$d dni</string>
+    <string name="budget_days_many">ešte %1$d dní</string>
+    <string name="budget_last_day">posledný deň mesiaca</string>
+    <string name="budget_remaining_of">zostáva z %1$s</string>
+    <string name="budget_remaining">Zostáva %1$s</string>
+    <string name="budget_over">Prekročené o %1$s</string>
+    <string name="budget_add">+ Pridať rozpočet</string>
+    <string name="budget_empty">Zatiaľ žiadne rozpočty. Mesačný limit sa dá nastaviť na hlavnú výdavkovú kategóriu; počíta aj jej podkategórie.</string>
+    <string name="budget_new">Nový rozpočet</string>
+    <string name="budget_edit">Upraviť rozpočet</string>
+    <string name="budget_category">Kategória</string>
+    <string name="budget_limit">Mesačný limit</string>
+    <string name="budget_no_categories">Všetky hlavné výdavkové kategórie už rozpočet majú.</string>
+    <string name="budget_info">Limit platí pre aktuálny aj ďalšie mesiace. Nevyčerpaná suma sa do ďalšieho mesiaca neprenáša.</string>
+    <string name="budget_delete_title">Zmazať rozpočet?</string>
+    <string name="budget_delete_text">Kategória ani jej transakcie sa nezmenia.</string>
+    <string name="report_month">Mesiac</string>
+    <string name="report_year">Rok</string>
+    <string name="report_balance">Bilancia</string>
+    <string name="report_income">Príjmy</string>
+    <string name="report_expenses">Výdavky</string>
+    <string name="report_by_category">Výdavky podľa kategórií</string>
+    <string name="report_by_month">Príjmy a výdavky po mesiacoch</string>
+    <string name="report_month_description">%1$s: príjmy %2$s, výdavky %3$s</string>
+    <string name="report_share">%1$s · %2$d %%</string>
+    <string name="report_no_subcategory">bez podkategórie</string>
+    <string name="report_empty">Žiadne výdavky v tomto období.</string>
+    <string name="report_expanded">rozbalené</string>
+    <string name="report_collapsed">zbalené</string>
 </resources>

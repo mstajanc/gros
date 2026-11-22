@@ -124,7 +124,10 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, contentPadding: PaddingValues, on
                         onClick = { sheet = FilterSheet.ACCOUNT },
                     )
                     FilterChip(
-                        text = state.filter.categoryId?.let(state.lookup::categoryTitle)
+                        text = state.filter.categoryId?.let { id ->
+                            val title = state.lookup.categoryTitle(id)
+                            if (state.filter.exactCategory) stringResource(R.string.filter_category_exact, title) else title
+                        }
                             ?: stringResource(R.string.filter_all_categories),
                         selected = state.filter.categoryId != null,
                         onClick = { sheet = FilterSheet.CATEGORY },

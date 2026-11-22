@@ -396,3 +396,15 @@ Schválené Mirecom spolu s plánom M3.
 - D4 Popis opakovania je odvodený z frekvencie, intervalu a „Ďalšej platby“ („Mesačne, 1. deň“, „Každé 3 mesiace, 15. deň“, „Týždenne, pondelok“, „Ročne, 3. 3.“).
 - D5 Nová platba s dnešnou „Ďalšou platbou“ sa zapíše bez otázky (formulár to uvádza pri poli); potvrdenie s počtom spätných zápisov sa ukáže len pri dátume v minulosti.
 - D6 Pozastaviť a Obnoviť sa uložia hneď. Obnovenie pravidla s archivovaným účtom či kategóriou appka odmietne s výzvou vybrať aktívne.
+
+## Rozhodnutia k M4 (22. 11. 2026)
+
+Schválené Mirecom spolu s plánom M4.
+
+- E1 Ak je súčet čerpania nad súčtom limitov, súhrnná karta rozpočtov ukáže „Prekročené o X €“ v oranžovej s plným oranžovým pruhom.
+- E2 „ešte N dní“ sa skloňuje (1 deň, 2–4 dni, 5+ dní); v posledný deň mesiaca text „posledný deň mesiaca“.
+- E3 Percentá v reporte: každý podiel sa zaokrúhli matematicky na celé percento (mockup 09); súčet nemusí dať presne 100 %.
+- E4 Ročný report má graf 12 dvojíc stĺpcov (príjmy akcent, výdavky sivé) škálovaný voči najväčšej mesačnej hodnote, s legendou a popisom mesiacov pre TalkBack; ťuknutie na mesiac nič nerobí.
+- E5 Šípka dozadu v Reportoch končí pri mesiaci (roku) najstaršej transakcie, šípka dopredu pri aktuálnom (B13).
+- E6 Ťuknutie na kategóriu v reporte otvorí Transakcie ako samostatnú obrazovku so Späť, s filtrom kategórie a obdobím reportu. Riadok „bez podkategórie“ ukáže len transakcie zaradené priamo do hlavnej kategórie (čip „Auto · bez podkategórie“). Rozpis podkategórií ukazuje sumu a pruh voči najväčšiemu riadku rozpisu.
+- E7 Formulár rozpočtu je samostatná obrazovka: kategória (len pri novom; aktívne hlavné výdavkové kategórie bez rozpočtu), mesačný limit klávesnicou appky, Uložiť a pri úprave Zmazať s potvrdením.

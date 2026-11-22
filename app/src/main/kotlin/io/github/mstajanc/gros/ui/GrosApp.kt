@@ -65,7 +65,11 @@ import io.github.mstajanc.gros.ui.common.SnackbarAction
 import io.github.mstajanc.gros.ui.common.appContainer
 import io.github.mstajanc.gros.ui.onboarding.OnboardingScreen
 import io.github.mstajanc.gros.ui.overview.OverviewScreen
+import io.github.mstajanc.gros.domain.Period
+import io.github.mstajanc.gros.ui.plan.BudgetFormScreen
+import io.github.mstajanc.gros.ui.plan.BudgetFormViewModel
 import io.github.mstajanc.gros.ui.plan.PlanScreen
+import io.github.mstajanc.gros.ui.reports.ReportsScreen
 import io.github.mstajanc.gros.ui.plan.RuleFormScreen
 import io.github.mstajanc.gros.ui.plan.RuleFormViewModel
 import io.github.mstajanc.gros.ui.theme.GrosShapes
@@ -90,11 +94,18 @@ private object Routes {
     const val ACCOUNTS = "accounts"
     const val ACCOUNT_PATTERN = "account?id={id}"
     const val RULE_PATTERN = "rule?id={id}"
+    const val BUDGET_PATTERN = "budget?id={id}"
+
+    /** Transakcie kategórie z Reportov: samostatná obrazovka so Späť, obdobie reportu (A4). */
+    const val CATEGORY_TRANSACTIONS_PATTERN = "categoryTransactions?categoryId={categoryId}&exact={exact}&period={period}"
     const val TRANSACTION_PATTERN = "transaction?id={id}&duplicate={duplicate}&type={type}"
 
     fun transactionsOfAccount(accountId: Long) = "accountTransactions/$accountId"
     fun account(id: Long? = null) = "account?id=${id ?: -1}"
     fun rule(id: Long? = null) = "rule?id=${id ?: -1}"
+    fun budget(id: Long? = null) = "budget?id=${id ?: -1}"
+    fun categoryTransactions(categoryId: Long, exact: Boolean, period: Period) =
+        "categoryTransactions?categoryId=$categoryId&exact=$exact&period=${TransactionsViewModel.encodePeriod(period)}"
     fun transaction(id: Long? = null, duplicate: Boolean = false, type: TransactionType? = null) =
         "transaction?id=${id ?: -1}&duplicate=$duplicate&type=${type?.name.orEmpty()}"
 }
@@ -122,7 +133,7 @@ private fun MainScreen() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val route = backStackEntry?.destination?.route.orEmpty()
     // Formuláre zaberajú celú obrazovku; lišta je len na prehľadových obrazovkách.
-    val showBar = !route.startsWith("transaction?") && !route.startsWith("account?") && !route.startsWith("rule?")
+    val showBar = !route.startsWith("transaction?") && !route.startsWith("account?") && !route.startsWith("rule?") && !route.startsWith("budget?")
     val snackbarHostState = remember { SnackbarHostState() }
     SnackbarEvents(snackbarHostState) { action ->
         when (action) {
@@ -199,6 +210,36 @@ private fun MainScreen() {
                     contentPadding = padding,
                     onAddRule = { navController.navigate(Routes.rule()) },
                     onEditRule = { navController.navigate(Routes.rule(it)) },
+                    onAddBudget = { navController.navigate(Routes.budget()) },
+                    onEditBudget = { navController.navigate(Routes.budget(it)) },
+                )
+            }
+            composable(
+                Routes.BUDGET_PATTERN,
+                arguments = listOf(
+                    navArgument(BudgetFormViewModel.ARG_ID) {
+                        type = NavType.LongType
+                        defaultValue = -1L
+                    },
+                ),
+            ) {
+                BudgetFormScreen(contentPadding = padding, onClose = navController::popBackStack)
+            }
+            composable(
+                Routes.CATEGORY_TRANSACTIONS_PATTERN,
+                arguments = listOf(
+                    navArgument(TransactionsViewModel.ARG_CATEGORY_ID) { type = NavType.LongType },
+                    navArgument(TransactionsViewModel.ARG_EXACT) {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    },
+                    navArgument(TransactionsViewModel.ARG_PERIOD) { type = NavType.StringType },
+                ),
+            ) {
+                TransactionsScreen(
+                    contentPadding = padding,
+                    onEdit = { navController.navigate(Routes.transaction(id = it)) },
+                    onBack = navController::popBackStack,
                 )
             }
             composable(
@@ -213,7 +254,9 @@ private fun MainScreen() {
                 RuleFormScreen(contentPadding = padding, onClose = navController::popBackStack)
             }
             composable(Routes.REPORTS) {
-                PlaceholderScreen(R.string.nav_reports, R.string.placeholder_reports, padding)
+                ReportsScreen(contentPadding = padding) { categoryId, exact, period ->
+                    navController.navigate(Routes.categoryTransactions(categoryId, exact, period))
+                }
             }
             composable(Routes.ACCOUNTS) {
                 AccountsScreen(
@@ -327,8 +370,8 @@ private fun BottomBar(route: String, onTab: (String) -> Unit, onAdd: () -> Unit)
     // Účty a pohyby účtu sa otvárajú z Prehľadu, preto patria pod jeho záložku.
     val selected = when {
         route.startsWith(Routes.TRANSACTIONS) -> Routes.TRANSACTIONS
-        route == Routes.PLAN || route.startsWith("rule?") -> Routes.PLAN
-        route == Routes.REPORTS -> Routes.REPORTS
+        route == Routes.PLAN || route.startsWith("rule?") || route.startsWith("budget?") -> Routes.PLAN
+        route == Routes.REPORTS || route.startsWith("categoryTransactions") -> Routes.REPORTS
         else -> Routes.OVERVIEW
     }
     Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
@@ -372,25 +415,5 @@ private fun TabItem(tab: Tab, selected: Boolean, onTab: (String) -> Unit, modifi
     ) {
         GrosIcon(tab.icon, contentDescription = null, tint = color)
         Text(stringResource(tab.label), style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
-    }
-}
-
-/** Dočasný obsah záložiek, ktoré pribudnú v neskorších míľnikoch. */
-@Composable
-private fun PlaceholderScreen(@StringRes title: Int, @StringRes text: Int, contentPadding: PaddingValues) {
-    CenteredContent(modifier = Modifier.padding(contentPadding)) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = ScreenPadding).padding(top = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            ScreenHeader(stringResource(title))
-            Text(
-                stringResource(text),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Start,
-                modifier = Modifier.semantics { }.fillMaxWidth(),
-            )
-        }
     }
 }

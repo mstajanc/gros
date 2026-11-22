@@ -92,7 +92,15 @@ data class TransactionFilter(
     val accountId: Long? = null,
     val categoryId: Long? = null,
     val query: String = "",
+    /** Len transakcie zaradené priamo do [categoryId], bez jej podkategórií („bez podkategórie“ z Reportov). */
+    val exactCategory: Boolean = false,
 ) {
+    /** Kategórie, ktoré filter zahŕňa; `null` = bez filtra kategórie. */
+    fun categoryIds(categories: List<Category>): List<Long>? {
+        val id = categoryId ?: return null
+        return if (exactCategory) listOf(id) else categoryIds(id, categories)
+    }
+
     companion object {
         /** Výber hlavnej kategórie zahŕňa aj jej podkategórie; podkategória len seba. */
         fun categoryIds(categoryId: Long, categories: List<Category>): List<Long> =

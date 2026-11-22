@@ -83,6 +83,15 @@ interface CategoryDao {
     suspend fun deleteById(id: Long)
 }
 
+/** Výdavky jednej kategórie za obdobie. */
+data class CategorySumRow(val categoryId: Long, val cents: Long)
+
+/** Príjmy a výdavky za obdobie (prevody sa nepočítajú). */
+data class TotalsRow(val incomeCents: Long, val expenseCents: Long)
+
+/** Príjmy a výdavky jedného mesiaca; `month` je text `RRRR-MM`. */
+data class MonthTotalsRow(val month: String, val incomeCents: Long, val expenseCents: Long)
+
 /** Súčty pohybov jedného účtu spočítané v SQL. */
 data class AccountFlowRow(
     val accountId: Long,
@@ -168,6 +177,43 @@ interface TransactionDao {
         """,
     )
     suspend fun suggestNotes(notePattern: String, limit: Int): List<String>
+
+    /** Výdavky po kategóriách za obdobie (krajné dni vrátane, `null` = bez obmedzenia). */
+    @Query(
+        """
+        SELECT categoryId, SUM(amountCents) AS cents FROM transactions
+        WHERE type = 'EXPENSE' AND categoryId IS NOT NULL
+          AND (:from IS NULL OR date >= :from) AND (:to IS NULL OR date <= :to)
+        GROUP BY categoryId
+        """,
+    )
+    fun observeExpenseByCategory(from: LocalDate?, to: LocalDate?): Flow<List<CategorySumRow>>
+
+    @Query(
+        """
+        SELECT COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amountCents ELSE 0 END), 0) AS incomeCents,
+               COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amountCents ELSE 0 END), 0) AS expenseCents
+        FROM transactions
+        WHERE (:from IS NULL OR date >= :from) AND (:to IS NULL OR date <= :to)
+        """,
+    )
+    fun observeTotals(from: LocalDate?, to: LocalDate?): Flow<TotalsRow>
+
+    @Query(
+        """
+        SELECT substr(date, 1, 7) AS month,
+               COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amountCents ELSE 0 END), 0) AS incomeCents,
+               COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amountCents ELSE 0 END), 0) AS expenseCents
+        FROM transactions
+        WHERE date >= :from AND date <= :to
+        GROUP BY month
+        """,
+    )
+    fun observeMonthlyTotals(from: LocalDate, to: LocalDate): Flow<List<MonthTotalsRow>>
+
+    /** Dátum najstaršej transakcie (ISO text) alebo `null`. */
+    @Query("SELECT MIN(date) FROM transactions")
+    fun observeEarliestDate(): Flow<String?>
 
     @Query(ACCOUNT_FLOWS_SQL)
     fun observeAccountFlows(): Flow<List<AccountFlowRow>>

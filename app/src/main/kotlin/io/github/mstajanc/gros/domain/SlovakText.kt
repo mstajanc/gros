@@ -74,6 +74,11 @@ object SlovakDates {
     /** „pondelok“ – deň v týždni malým písmenom. */
     fun weekdayName(date: LocalDate): String = weekdays.getValue(date.dayOfWeek).lowercase()
 
+    private val shortMonths = listOf("jan", "feb", "mar", "apr", "máj", "jún", "júl", "aug", "sep", "okt", "nov", "dec")
+
+    /** „jan“ – skratka mesiaca pre ročný graf. */
+    fun shortMonth(monthValue: Int): String = shortMonths[monthValue - 1]
+
     /** „november“ */
     fun monthName(month: YearMonth): String = months[month.monthValue - 1]
 
