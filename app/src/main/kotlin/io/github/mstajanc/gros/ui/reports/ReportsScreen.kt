@@ -293,6 +293,7 @@ private fun BalanceCard(totals: PeriodTotals) {
                 label = stringResource(R.string.report_expenses),
                 amount = MoneyFormatter.format(totals.expenseCents),
                 modifier = Modifier.weight(1f),
+                amountColor = GrosTheme.colors.expense,
             )
         }
     }

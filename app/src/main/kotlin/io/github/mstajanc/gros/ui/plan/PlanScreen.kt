@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -130,6 +131,7 @@ fun PlanScreen(
                     label = stringResource(R.string.plan_expenses_month),
                     amount = MoneyFormatter.format(state.summary.expenseCents),
                     modifier = Modifier.weight(1f),
+                    amountColor = GrosTheme.colors.expense,
                     containerColor = MaterialTheme.colorScheme.surface,
                 )
                 SummaryTile(
@@ -182,6 +184,13 @@ fun PlanScreen(
     }
 }
 
+/** „Auto › Palivo“ pre podkategóriu, inak len názov hlavnej kategórie. */
+private fun categoryPath(lookup: Lookup, categoryId: Long?): String? {
+    val category = lookup.categories[categoryId] ?: return null
+    val parent = category.parentId?.let { lookup.categories[it] }
+    return if (parent == null) category.name else "${parent.name} › ${category.name}"
+}
+
 @Composable
 private fun RuleCard(rule: RecurringRule, status: RuleStatus, state: PlanState, onClick: () -> Unit) {
     val lookup = state.lookup
@@ -199,7 +208,7 @@ private fun RuleCard(rule: RecurringRule, status: RuleStatus, state: PlanState, 
     val amountColor = when (rule.type) {
         TransactionType.INCOME -> MaterialTheme.colorScheme.primary
         TransactionType.TRANSFER -> GrosTheme.colors.transfer
-        TransactionType.EXPENSE -> MaterialTheme.colorScheme.onSurface
+        TransactionType.EXPENSE -> GrosTheme.colors.expense
     }
     val dateText = when (status) {
         RuleStatus.ACTIVE -> stringResource(R.string.plan_next, SlovakDates.shortDate(rule.nextDate, state.today))
@@ -230,10 +239,18 @@ private fun RuleCard(rule: RecurringRule, status: RuleStatus, state: PlanState, 
                 style = MaterialTheme.typography.titleMedium,
                 color = if (dimmed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
             )
+            // Kategória vpredu, aby sa platby s rovnakým písmenom v ikone dali rozlíšiť (F3);
+            // riadok sa nezalamuje, dlhý text skončí „…“.
             Text(
-                "${repeatShort(rule.frequency, rule.interval)} · $accountText",
+                listOfNotNull(
+                    if (isTransfer) null else categoryPath(lookup, rule.categoryId),
+                    repeatShort(rule.frequency, rule.interval),
+                    accountText,
+                ).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         Column(horizontalAlignment = Alignment.End) {

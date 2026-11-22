@@ -19,6 +19,7 @@ internal object DarkTokens {
     val transfer = Color(0xFF9CC0FF)
     val transferContainer = Color(0xFF24304A)
     val warning = Color(0xFFFFB36B)
+    val expense = Color(0xFFFF8A8A)
 
     val categoryPalette = listOf(
         CategoryColor(container = Color(0xFF2B3A33), content = Color(0xFF6EE7B0)), // zelená
@@ -34,12 +35,14 @@ internal object DarkTokens {
 @Immutable
 data class CategoryColor(val container: Color, val content: Color)
 
-/** Farby, ktoré Material 3 nepozná: prevody, varovanie a paleta kategórií. */
+/** Farby, ktoré Material 3 nepozná: prevody, výdavky, varovanie a paleta kategórií. */
 @Immutable
 data class GrosColors(
     val transfer: Color,
     val transferContainer: Color,
     val warning: Color,
+    /** Sumy výdavkov (rozhodnutie F2). */
+    val expense: Color,
     val categoryPalette: List<CategoryColor>,
 ) {
     /** `Category.color` je index do palety; neznámy index padne na poslednú (sivú) farbu. */
@@ -50,6 +53,7 @@ internal val DarkGrosColors = GrosColors(
     transfer = DarkTokens.transfer,
     transferContainer = DarkTokens.transferContainer,
     warning = DarkTokens.warning,
+    expense = DarkTokens.expense,
     categoryPalette = DarkTokens.categoryPalette,
 )
 

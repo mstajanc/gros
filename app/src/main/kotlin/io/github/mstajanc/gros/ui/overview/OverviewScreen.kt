@@ -56,6 +56,7 @@ import io.github.mstajanc.gros.ui.common.TransactionRow
 import io.github.mstajanc.gros.ui.common.accountsOfText
 import io.github.mstajanc.gros.ui.common.grosViewModel
 import io.github.mstajanc.gros.ui.theme.GrosShapes
+import io.github.mstajanc.gros.ui.theme.GrosTheme
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.flow.SharingStarted
@@ -148,6 +149,7 @@ fun OverviewScreen(
                         label = stringResource(R.string.overview_expenses, monthName),
                         amount = MoneyFormatter.format(-state.month.expenseCents),
                         modifier = Modifier.weight(1f),
+                        amountColor = GrosTheme.colors.expense,
                     )
                 }
             }

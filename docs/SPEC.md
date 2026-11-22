@@ -20,7 +20,7 @@ MVP obsahuje 10 funkcií; všetko ostatné je zámerne vynechané a Claude Code 
 **V MVP**
 
 1. **Účty** – názov, typ (bežný, hotovosť, sporenie, investície, iný), počiatočný stav, prepínač „V súčte“, oprava zostatku, archivácia.
-2. **Transakcie** – výdavok, príjem, prevod medzi účtami. Úprava všetkých polí vrátane typu, zmazanie s možnosťou Späť (snackbar 5 s). Poznámka našepkáva z predošlých zápisov.
+2. **Transakcie** – výdavok, príjem, prevod medzi účtami. Úprava všetkých polí vrátane typu, zmazanie s potvrdením a možnosťou Späť (snackbar 5 s). Poznámka našepkáva z predošlých zápisov.
 3. **Zoznam transakcií** – zoskupený po dňoch, filter podľa účtu, kategórie a obdobia, hľadanie v poznámke, súčet nad výsledkom.
 4. **Kategórie** – dve úrovne (hlavná kategória a jej podkategórie, napr. Auto → Tankovanie, Servis), osobitne výdavkové a príjmové, názov + farba. Vytvorenie, premenovanie, presun, zlúčenie dvoch kategórií, archivácia. Podrobnosti v sekcii Biznis pravidlá – Podkategórie.
 5. **Opakované platby** – výdavok, príjem aj prevod; každých N týždňov, mesiacov alebo rokov. Plná úprava, pozastavenie, zmazanie.
@@ -86,7 +86,7 @@ Spodná lišta má 4 záložky a stredové tlačidlo +: Prehľad · Transakcie �
 | Obrazovka | Obsah | Akcie |
 | --- | --- | --- |
 | Prehľad | Súčet účtov „V súčte“, príjmy a výdavky aktuálneho mesiaca, účty, posledných 5 transakcií | Ťuknutie na transakciu = úprava; „Všetky“ = zoznam transakcií; ťuknutie na účet = jeho pohyby |
-| Zoznam transakcií | Transakcie po dňoch, filter účet / kategória / obdobie, hľadanie, súčet nad výsledkom | Úprava, potiahnutie = zmazanie so Späť |
+| Zoznam transakcií | Transakcie po dňoch, filter účet / kategória / obdobie, hľadanie, súčet nad výsledkom | Úprava, potiahnutie = zmazanie s potvrdením a Späť |
 | Nová / úprava transakcie | Typ, suma, kategória, účet, dátum, poznámka | Uložiť; pri úprave aj Zmazať a Duplikovať |
 | Účty | Zoznam účtov so zostatkom a prepínačom „V súčte“ | Ťuknutie = pohyby účtu; ceruzka = úprava, oprava zostatku, archivácia; pridať účet; prevod |
 | Plán – Opakované | Pravidlá s ďalším dátumom, súhrn prepočítaný na mesiac | Pridať, upraviť, pozastaviť, zmazať |
@@ -118,7 +118,7 @@ Zmena typu pri úprave: výdavok ↔ príjem vynuluje kategóriu a vyžiada nov�
 - Vždy existuje aspoň jeden aktívny účet: sprievodca ho vyžaduje a posledný aktívny účet sa nedá archivovať. Typ Prevod je dostupný až pri dvoch aktívnych účtoch.
 - Ak posledný použitý účet neexistuje alebo je archivovaný, predvyplní sa prvý aktívny účet podľa poradia.
 - Archivované účty a kategórie sa pri novom zázname neponúkajú; ostávajú zobrazené na záznamoch, ktoré ich už používajú, a vo filtroch.
-- Zmazanie transakcie sa vykoná hneď a Späť ju vloží späť s pôvodným `id`. Zmazanie pravidla, zmazanie rozpočtu a import vyžadujú potvrdzovací dialóg.
+- Zmazanie transakcie potiahnutím sa vykoná po potvrdení v dialógu (F1) a Späť ju vloží späť s pôvodným `id`. Zmazanie pravidla, zmazanie rozpočtu a import vyžadujú potvrdzovací dialóg.
 - Systémové Späť na rozpracovanom formulári zahodí zmeny bez dialógu. Rozpracovaný formulár prežije otočenie obrazovky aj obnovenie procesu (`SavedStateHandle`).
 - Počty sa skloňujú cez `plurals` (1 transakcia, 3 transakcie, 5 transakcií).
 - Poradie účtov a kategórií sa mení potiahnutím v ich zoznamoch.
@@ -154,6 +154,7 @@ Claude Code mockup na claude.ai neotvorí; záväzné sú tieto tokeny a PNG sn�
 | onPrimary | #0E1311 | Text na akcente |
 | transfer / transferContainer | #9CC0FF / #24304A | Prevody |
 | warning | #FFB36B | Prekročený rozpočet, deštruktívna akcia |
+| expense | #FF8A8A | Sumy výdavkov (F2) |
 
 - Písma: Inter (text) a Space Grotesk (nadpisy, veľké sumy), obe pribalené v `res/font` (licencia OFL). Žiadne downloadable fonts, tie vyžadujú poskytovateľa mimo appky. Sumy používajú tabulkové číslice.
 - Tvary: karty 24 / 18 / 14 dp, tlačidlá 16 dp, čipy a okrúhle tlačidlá plne zaoblené.
@@ -408,3 +409,12 @@ Schválené Mirecom spolu s plánom M4.
 - E5 Šípka dozadu v Reportoch končí pri mesiaci (roku) najstaršej transakcie, šípka dopredu pri aktuálnom (B13).
 - E6 Ťuknutie na kategóriu v reporte otvorí Transakcie ako samostatnú obrazovku so Späť, s filtrom kategórie a obdobím reportu. Riadok „bez podkategórie“ ukáže len transakcie zaradené priamo do hlavnej kategórie (čip „Auto · bez podkategórie“). Rozpis podkategórií ukazuje sumu a pruh voči najväčšiemu riadku rozpisu.
 - E7 Formulár rozpočtu je samostatná obrazovka: kategória (len pri novom; aktívne hlavné výdavkové kategórie bez rozpočtu), mesačný limit klávesnicou appky, Uložiť a pri úprave Zmazať s potvrdením.
+
+## Rozhodnutia po teste M4 – v0.4.1 (22. 11. 2026)
+
+Schválené Mirecom po teste v telefóne.
+
+- F1 Potiahnutie transakcie v zozname zmazanie len navrhne: ukáže dialóg „Zmazať transakciu?“ s kategóriou a dátumom. Zrušiť nechá riadok na mieste; po potvrdení ostáva aj Späť v snackbare.
+- F2 Sumy výdavkov sú v novej farbe `expense` (#FF8A8A): riadky transakcií, karty opakovaných platieb a dlaždice Výdavky na Prehľade, v Transakciách, v Pláne a v Reportoch. Sivé stĺpce výdavkov v ročnom grafe (E4) a oranžové prekročenie rozpočtu (E1) ostávajú.
+- F3 Karta opakovanej platby má v druhom riadku kategóriu („Auto › Palivo · Mesačne · Účet“; pri prevode bez kategórie). Riadok sa nezalamuje, dlhý text končí „…“.
+- F4 Voľba veľkosti písma v appke (Menšie / Štandardné / Väčšie, cca 90 / 100 / 115 % násobené systémovou veľkosťou) pribudne v M5 v Nastaveniach.

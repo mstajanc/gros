@@ -67,6 +67,8 @@
     <string name="list_empty">Žiadne transakcie pre tento výber.</string>
     <string name="snackbar_saved">Uložené</string>
     <string name="snackbar_deleted">Transakcia zmazaná</string>
+    <string name="tx_delete_title">Zmazať transakciu?</string>
+    <string name="tx_delete_text">%1$s, %2$s. Hneď po zmazaní ju ešte vrátiš cez Späť.</string>
 
     <!-- Nová a úprava transakcie -->
     <string name="form_new">Nová transakcia</string>

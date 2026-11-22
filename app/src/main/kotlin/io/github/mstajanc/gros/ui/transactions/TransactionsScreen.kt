@@ -52,8 +52,10 @@ import io.github.mstajanc.gros.domain.SignDisplay
 import io.github.mstajanc.gros.domain.SlovakDates
 import io.github.mstajanc.gros.domain.model.Category
 import io.github.mstajanc.gros.domain.model.Transaction
+import io.github.mstajanc.gros.domain.model.TransactionType
 import io.github.mstajanc.gros.ui.common.AmountText
 import io.github.mstajanc.gros.ui.common.CenteredContent
+import io.github.mstajanc.gros.ui.common.ConfirmDialog
 import io.github.mstajanc.gros.ui.common.CircleIconButton
 import io.github.mstajanc.gros.ui.common.FilterChip
 import io.github.mstajanc.gros.ui.common.GrosTextField
@@ -96,6 +98,9 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, contentPadding: PaddingValues, on
     val viewModel = grosViewModel { container, handle -> TransactionsViewModel(container, handle) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     var sheet by rememberSaveable { mutableStateOf<FilterSheet?>(null) }
+    // Potiahnutie riadka len pýta potvrdenie; zmaže až dialóg (rozhodnutie F1).
+    var pendingDelete by rememberSaveable { mutableStateOf<Long?>(null) }
+    val requestDelete: (Transaction) -> Unit = { pendingDelete = it.id }
 
     BackHandler(enabled = state.searchActive, onBack = viewModel::closeSearch)
 
@@ -143,13 +148,13 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, contentPadding: PaddingValues, on
                     } else if (state.searchActive) {
                         // V režime hľadania je titulkom poznámka a zoznam nie je delený po dňoch.
                         items(state.transactions, key = { it.id }) { transaction ->
-                            SwipeRow(transaction, state, RowStyle.SEARCH, onEdit, viewModel::delete)
+                            SwipeRow(transaction, state, RowStyle.SEARCH, onEdit, requestDelete)
                         }
                     } else {
                         state.groups.forEach { group ->
                             item(key = "day-${group.date}") { DayHeader(group, state) }
                             items(group.transactions, key = { it.id }) { transaction ->
-                                SwipeRow(transaction, state, RowStyle.LIST, onEdit, viewModel::delete)
+                                SwipeRow(transaction, state, RowStyle.LIST, onEdit, requestDelete)
                             }
                         }
                     }
@@ -205,6 +210,30 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, contentPadding: PaddingValues, on
         )
 
         null -> Unit
+    }
+
+    pendingDelete?.let { id ->
+        val transaction = state.transactions.firstOrNull { it.id == id }
+        if (transaction == null) {
+            // Transakcia medzitým zmizla (napr. filter alebo zmazanie inde); dialóg nemá čo ukázať.
+            LaunchedEffect(id, state.loaded) { if (state.loaded) pendingDelete = null }
+        } else {
+            val title = if (transaction.type == TransactionType.TRANSFER) {
+                stringResource(R.string.transfer)
+            } else {
+                state.lookup.categoryTitle(transaction.categoryId)
+            }
+            ConfirmDialog(
+                title = stringResource(R.string.tx_delete_title),
+                text = stringResource(R.string.tx_delete_text, title, SlovakDates.fullDate(transaction.date)),
+                confirmLabel = stringResource(R.string.action_delete),
+                onConfirm = {
+                    pendingDelete = null
+                    viewModel.delete(transaction)
+                },
+                onDismiss = { pendingDelete = null },
+            )
+        }
     }
 }
 
@@ -271,6 +300,7 @@ private fun Summary(state: TransactionsState) {
                 label = stringResource(R.string.tx_expenses),
                 amount = MoneyFormatter.format(-state.summary.expenseCents),
                 modifier = Modifier.weight(1f),
+                amountColor = GrosTheme.colors.expense,
                 containerColor = MaterialTheme.colorScheme.surface,
             )
             SummaryTile(
@@ -343,8 +373,8 @@ private fun SwipeRow(
     SwipeToDismissBox(
         state = dismissState,
         onDismiss = {
-            // Stav sa ukladá podľa kľúča riadka; bez návratu do pokoja by sa transakcia
-            // obnovená cez Späť vrátila ako „odtiahnutá“ a hneď sa zmazala znova.
+            // Riadok sa vždy vráti na miesto: pri Zrušiť ostane, pri potvrdení zmizne zo zoznamu.
+            // Bez návratu do pokoja by sa transakcia obnovená cez Späť vrátila ako „odtiahnutá“.
             scope.launch { dismissState.snapTo(SwipeToDismissBoxValue.Settled) }
             onDelete(transaction)
         },

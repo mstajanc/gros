@@ -114,7 +114,7 @@ fun TransactionRow(
     val amountColor = when (transaction.type) {
         TransactionType.INCOME -> MaterialTheme.colorScheme.primary
         TransactionType.TRANSFER -> GrosTheme.colors.transfer
-        TransactionType.EXPENSE -> MaterialTheme.colorScheme.onSurface
+        TransactionType.EXPENSE -> GrosTheme.colors.expense
     }
 
     Row(

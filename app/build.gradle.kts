@@ -42,8 +42,8 @@ android {
         minSdk = 34
         targetSdk = 37
         // Pri každom vydaní (GitHub Release pre Obtainium) sa versionCode zvýši.
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 5
+        versionName = "0.4.1"
     }
 
     signingConfigs {
