@@ -2,9 +2,7 @@ package io.github.mstajanc.gros.ui.accounts
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -20,31 +17,16 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -61,6 +43,7 @@ import io.github.mstajanc.gros.ui.common.CenteredContent
 import io.github.mstajanc.gros.ui.common.CircleIconButton
 import io.github.mstajanc.gros.ui.common.GrosCard
 import io.github.mstajanc.gros.ui.common.GrosIcon
+import io.github.mstajanc.gros.ui.common.ReorderableColumn
 import io.github.mstajanc.gros.ui.common.ScreenHeader
 import io.github.mstajanc.gros.ui.common.ScreenPadding
 import io.github.mstajanc.gros.ui.common.SecondaryButton
@@ -229,10 +212,7 @@ fun AccountsScreen(
     }
 }
 
-/**
- * Zoznam aktívnych účtov, ktorých poradie sa mení potiahnutím za úchyt. Vlastná implementácia
- * bez knižnice; pre TalkBack má úchyt akcie „posunúť vyššie“ a „posunúť nižšie“.
- */
+/** Zoznam aktívnych účtov, ktorých poradie sa mení potiahnutím za úchyt (B16). */
 @Composable
 private fun ReorderableAccounts(
     accounts: List<AccountBalance>,
@@ -241,92 +221,21 @@ private fun ReorderableAccounts(
     onEdit: (Long) -> Unit,
     onIncludeInTotal: (Account, Boolean) -> Unit,
 ) {
-    val byId = accounts.associateBy { it.account.id }
-    val storedOrder = accounts.map { it.account.id }
-    // Počas ťahania platí miestne poradie; po uložení ho nahradí poradie z databázy.
-    var order by remember(storedOrder) { mutableStateOf(storedOrder) }
-    var draggedId by remember { mutableStateOf<Long?>(null) }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
-    var itemHeight by remember { mutableIntStateOf(0) }
-    val spacing = with(LocalDensity.current) { 10.dp.toPx() }
-    val currentOrder by rememberUpdatedState(order)
-
-    fun move(id: Long, delta: Int): Boolean {
-        val from = order.indexOf(id)
-        val to = from + delta
-        if (from < 0 || to !in order.indices) return false
-        order = order.toMutableList().apply { add(to, removeAt(from)) }
-        return true
-    }
-
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        order.forEach { id ->
-            val balance = byId[id] ?: return@forEach
-            key(id) {
-                val isDragged = draggedId == id
-                val moveUp = stringResource(R.string.accounts_move_up)
-                val moveDown = stringResource(R.string.accounts_move_down)
-                val dragDescription = stringResource(R.string.accounts_drag, balance.account.name)
-
-                AccountCard(
-                    balance = balance,
-                    onClick = { onAccount(id) },
-                    onEdit = { onEdit(id) },
-                    onIncludeInTotal = { onIncludeInTotal(balance.account, it) },
-                    modifier = Modifier
-                        .zIndex(if (isDragged) 1f else 0f)
-                        .graphicsLayer { translationY = if (isDragged) dragOffset else 0f }
-                        .onSizeChanged { itemHeight = it.height },
-                    handle = {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .semantics {
-                                    contentDescription = dragDescription
-                                    customActions = listOf(
-                                        CustomAccessibilityAction(moveUp) {
-                                            move(id, -1).also { moved -> if (moved) onReorder(order) }
-                                        },
-                                        CustomAccessibilityAction(moveDown) {
-                                            move(id, 1).also { moved -> if (moved) onReorder(order) }
-                                        },
-                                    )
-                                }
-                                .pointerInput(id) {
-                                    detectDragGestures(
-                                        onDragStart = {
-                                            draggedId = id
-                                            dragOffset = 0f
-                                        },
-                                        onDrag = { change, amount ->
-                                            change.consume()
-                                            dragOffset += amount.y
-                                            val step = itemHeight + spacing
-                                            if (step > 0f) {
-                                                // Po prekročení polovice susedného riadka si riadky vymenia miesto.
-                                                if (dragOffset > step / 2 && move(id, 1)) dragOffset -= step
-                                                if (dragOffset < -step / 2 && move(id, -1)) dragOffset += step
-                                            }
-                                        },
-                                        onDragEnd = {
-                                            draggedId = null
-                                            dragOffset = 0f
-                                            onReorder(currentOrder)
-                                        },
-                                        onDragCancel = {
-                                            draggedId = null
-                                            dragOffset = 0f
-                                        },
-                                    )
-                                },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            GrosIcon(R.drawable.ic_grip_vertical, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    },
-                )
-            }
-        }
+    ReorderableColumn(
+        items = accounts,
+        key = { it.account.id },
+        label = { it.account.name },
+        onReorder = onReorder,
+    ) { balance, handle, modifier ->
+        val id = balance.account.id
+        AccountCard(
+            balance = balance,
+            onClick = { onAccount(id) },
+            onEdit = { onEdit(id) },
+            onIncludeInTotal = { onIncludeInTotal(balance.account, it) },
+            modifier = modifier,
+            handle = handle,
+        )
     }
 }
 

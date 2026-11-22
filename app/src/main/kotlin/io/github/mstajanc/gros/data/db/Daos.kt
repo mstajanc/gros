@@ -55,6 +55,9 @@ interface CategoryDao {
     @Query("SELECT COUNT(*) FROM categories WHERE parentId = :parentId")
     suspend fun countChildren(parentId: Long): Int
 
+    @Query("SELECT * FROM categories WHERE parentId = :parentId ORDER BY sortOrder, id")
+    suspend fun getChildren(parentId: Long): List<CategoryEntity>
+
     @Query("SELECT id FROM categories WHERE parentId = :parentId")
     suspend fun getChildIds(parentId: Long): List<Long>
 
@@ -136,6 +139,10 @@ interface TransactionDao {
 
     @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :categoryId")
     suspend fun countByCategory(categoryId: Long): Int
+
+    /** Zlúčenie kategórií: transakcie zdrojovej kategórie prejdú na cieľovú. */
+    @Query("UPDATE transactions SET categoryId = :toId WHERE categoryId = :fromId")
+    suspend fun reassignCategory(fromId: Long, toId: Long)
 
     /**
      * Zoznam transakcií od najnovšej. Každý filter je nepovinný a dajú sa kombinovať:
@@ -263,6 +270,10 @@ interface RecurringRuleDao {
 
     @Query("SELECT COUNT(*) FROM recurring_rules WHERE categoryId = :categoryId")
     suspend fun countByCategory(categoryId: Long): Int
+
+    /** Zlúčenie kategórií: pravidlá zdrojovej kategórie prejdú na cieľovú. */
+    @Query("UPDATE recurring_rules SET categoryId = :toId WHERE categoryId = :fromId")
+    suspend fun reassignCategory(fromId: Long, toId: Long)
 
     @Insert
     suspend fun insert(rule: RecurringRuleEntity): Long

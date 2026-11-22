@@ -16,14 +16,14 @@ import kotlinx.coroutines.flow.map
 /**
  * Kategórie v dvoch úrovniach. Stráži: najviac dve úrovne, podkategória má druh aj farbu rodiča,
  * druh sa po vytvorení nemení a vždy ostáva aspoň jedna aktívna hlavná kategória každého druhu.
- *
- * Presun, povýšenie a zlúčenie kategórií pribudnú v M5.
+ * Názvy sú medzi súrodencami jedinečné (G1).
  */
 class CategoryRepository(private val db: GrosDatabase) {
 
     private val categories = db.categoryDao()
     private val transactions = db.transactionDao()
     private val rules = db.recurringRuleDao()
+    private val budgets = db.budgetDao()
 
     /** Všetky kategórie vrátane archivovaných, zoradené podľa `sortOrder` v rámci rodiča. */
     fun observeCategories(): Flow<List<Category>> =
@@ -36,6 +36,7 @@ class CategoryRepository(private val db: GrosDatabase) {
         db.withWriteTransaction {
             val parent = parentId?.let { categories.getById(it)?.toDomain() }
             CategoryRules.validateNew(name, kind, color, parentId, parent).throwIfViolated()
+            CategoryRules.validateName(name, siblings(parentId, kind)).throwIfViolated()
             val sortOrder = if (parentId == null) {
                 categories.maxMainSortOrder(kind) + 1
             } else {
@@ -56,7 +57,7 @@ class CategoryRepository(private val db: GrosDatabase) {
     suspend fun rename(id: Long, name: String) {
         db.withWriteTransaction {
             val existing = require(id)
-            CategoryRules.validateName(name).throwIfViolated()
+            CategoryRules.validateName(name, siblings(existing.parentId, existing.kind), selfId = id).throwIfViolated()
             categories.update(existing.copy(name = name.trim()))
         }
     }
@@ -120,6 +121,99 @@ class CategoryRepository(private val db: GrosDatabase) {
         }
     }
 
+    /** Koľko záznamov kategóriu používa; podľa toho UI ponúkne Zmazať alebo len Archivovať a Zlúčiť. */
+    suspend fun usage(id: Long): CategoryUsage = CategoryUsage(
+        transactions = transactions.countByCategory(id),
+        rules = rules.countByCategory(id),
+        subcategories = categories.countChildren(id),
+    )
+
+    /**
+     * Presunie kategóriu pod hlavnú kategóriu [newParentId] alebo ju povýši na hlavnú (`null`).
+     * Zaradí sa na koniec nového rodiča (G3) a ako podkategória preberie jeho farbu. Rozpočet
+     * presúvanej hlavnej kategórie prejde na nového rodiča, ak ten žiadny nemá; inak zanikne (G11).
+     */
+    suspend fun move(id: Long, newParentId: Long?) {
+        db.withWriteTransaction {
+            val existing = require(id)
+            if (existing.parentId == newParentId) return@withWriteTransaction
+            val newParent = newParentId?.let { require(it) }
+            CategoryRules.canMove(existing.toDomain(), newParent?.toDomain(), categories.countChildren(id) > 0)
+                .throwIfViolated()
+            CategoryRules.validateName(existing.name, siblings(newParentId, existing.kind), selfId = id).throwIfViolated()
+            if (newParent != null && existing.parentId == null) handOverBudget(fromId = id, toMainId = newParent.id)
+            categories.update(
+                existing.copy(
+                    parentId = newParentId,
+                    color = newParent?.color ?: existing.color,
+                    sortOrder = nextSortOrder(newParentId, existing.kind),
+                ),
+            )
+        }
+    }
+
+    /**
+     * Zlúči [sourceId] do [targetId]: transakcie a pravidlá prejdú na cieľ, podkategórie zdroja sa
+     * presunú pod cieľ (rovnomenné sa zlúčia do existujúcich, G11) a zdroj sa zmaže. Rozpočet cieľa
+     * ostáva; ak cieľ (pri podkategórii jej hlavná kategória) rozpočet nemá, prevezme rozpočet zdroja.
+     */
+    suspend fun merge(sourceId: Long, targetId: Long) {
+        db.withWriteTransaction {
+            val source = require(sourceId)
+            val target = require(targetId)
+            val targetParent = target.parentId?.let { require(it) }
+            val children = categories.getChildren(sourceId)
+            CategoryRules.canMerge(source.toDomain(), target.toDomain(), targetParent?.toDomain(), children.isNotEmpty())
+                .throwIfViolated()
+
+            moveReferences(sourceId, targetId)
+            val targetChildren = categories.getChildren(targetId)
+            for (child in children) {
+                val sameName = targetChildren.firstOrNull { it.name.trim().equals(child.name.trim(), ignoreCase = true) }
+                if (sameName != null) {
+                    moveReferences(child.id, sameName.id)
+                    categories.deleteById(child.id)
+                } else {
+                    categories.update(
+                        child.copy(
+                            parentId = targetId,
+                            color = target.color,
+                            sortOrder = categories.maxChildSortOrder(targetId) + 1,
+                        ),
+                    )
+                }
+            }
+            if (source.parentId == null) handOverBudget(fromId = sourceId, toMainId = target.parentId ?: targetId)
+            categories.deleteById(sourceId)
+        }
+    }
+
+    private suspend fun moveReferences(fromId: Long, toId: Long) {
+        transactions.reassignCategory(fromId, toId)
+        rules.reassignCategory(fromId, toId)
+    }
+
+    /** Rozpočet prejde na hlavnú kategóriu [toMainId], ak tá žiadny nemá; inak sa zmaže. */
+    private suspend fun handOverBudget(fromId: Long, toMainId: Long) {
+        val budget = budgets.getByCategory(fromId) ?: return
+        if (budgets.getByCategory(toMainId) == null) {
+            budgets.update(budget.copy(categoryId = toMainId))
+        } else {
+            budgets.deleteById(budget.id)
+        }
+    }
+
+    private suspend fun nextSortOrder(parentId: Long?, kind: CategoryKind): Int =
+        if (parentId == null) categories.maxMainSortOrder(kind) + 1 else categories.maxChildSortOrder(parentId) + 1
+
+    private suspend fun siblings(parentId: Long?, kind: CategoryKind): List<Category> =
+        CategoryRules.siblings(categories.getAll().map { it.toDomain() }, parentId, kind)
+
     private suspend fun require(id: Long): CategoryEntity =
         categories.getById(id) ?: throw InvariantViolationException(Violation.NOT_FOUND)
+}
+
+/** Počty záznamov, ktoré kategóriu používajú. */
+data class CategoryUsage(val transactions: Int, val rules: Int, val subcategories: Int) {
+    val isUsed: Boolean get() = transactions > 0 || rules > 0
 }

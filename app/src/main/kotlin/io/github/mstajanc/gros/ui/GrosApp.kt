@@ -57,6 +57,11 @@ import io.github.mstajanc.gros.domain.model.TransactionType
 import io.github.mstajanc.gros.ui.accounts.AccountFormScreen
 import io.github.mstajanc.gros.ui.accounts.AccountFormViewModel
 import io.github.mstajanc.gros.ui.accounts.AccountsScreen
+import io.github.mstajanc.gros.ui.categories.CategoriesScreen
+import io.github.mstajanc.gros.ui.categories.CategoryFormScreen
+import io.github.mstajanc.gros.ui.categories.CategoryFormViewModel
+import io.github.mstajanc.gros.ui.settings.SettingsScreen
+import io.github.mstajanc.gros.domain.model.CategoryKind
 import io.github.mstajanc.gros.ui.common.CenteredContent
 import io.github.mstajanc.gros.ui.common.GrosIcon
 import io.github.mstajanc.gros.ui.common.ScreenHeader
@@ -95,6 +100,9 @@ private object Routes {
     const val ACCOUNT_PATTERN = "account?id={id}"
     const val RULE_PATTERN = "rule?id={id}"
     const val BUDGET_PATTERN = "budget?id={id}"
+    const val SETTINGS = "settings"
+    const val CATEGORIES = "categories"
+    const val CATEGORY_PATTERN = "category?id={id}&parent={parent}&kind={kind}"
 
     /** Transakcie kategórie z Reportov: samostatná obrazovka so Späť, obdobie reportu (A4). */
     const val CATEGORY_TRANSACTIONS_PATTERN = "categoryTransactions?categoryId={categoryId}&exact={exact}&period={period}"
@@ -104,6 +112,8 @@ private object Routes {
     fun account(id: Long? = null) = "account?id=${id ?: -1}"
     fun rule(id: Long? = null) = "rule?id=${id ?: -1}"
     fun budget(id: Long? = null) = "budget?id=${id ?: -1}"
+    fun category(id: Long? = null, parent: Long? = null, kind: CategoryKind? = null) =
+        "category?id=${id ?: -1}&parent=${parent ?: -1}&kind=${kind?.name.orEmpty()}"
     fun categoryTransactions(categoryId: Long, exact: Boolean, period: Period) =
         "categoryTransactions?categoryId=$categoryId&exact=$exact&period=${TransactionsViewModel.encodePeriod(period)}"
     fun transaction(id: Long? = null, duplicate: Boolean = false, type: TransactionType? = null) =
@@ -113,27 +123,44 @@ private object Routes {
 /** Ako dlho je vidieť snackbar s akciou Späť. */
 private const val SNACKBAR_MILLIS = 5_000L
 
-/** Koreň appky: kým neexistuje žiadny účet, beží sprievodca prvým spustením. */
+/**
+ * Koreň appky: kým neexistuje žiadny účet, beží sprievodca prvým spustením.
+ * [newTransactionRequested] nastaví widget; po dokončení sprievodcu sa už ignoruje.
+ */
 @Composable
-fun GrosApp() {
+fun GrosApp(newTransactionRequested: Boolean = false, onNewTransactionOpened: () -> Unit = {}) {
     val container = appContainer()
     val accountCountFlow = remember { container.accountRepository.observeAccountCount() }
     val accountCount by accountCountFlow.collectAsStateWithLifecycle(initialValue = null)
 
     when (accountCount) {
         null -> Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {}
-        0 -> OnboardingScreen()
-        else -> MainScreen()
+        0 -> {
+            // Bez účtu sa transakcia zapísať nedá; widget otvorí sprievodcu.
+            if (newTransactionRequested) onNewTransactionOpened()
+            OnboardingScreen()
+        }
+        else -> MainScreen(newTransactionRequested, onNewTransactionOpened)
     }
 }
 
 @Composable
-private fun MainScreen() {
+private fun MainScreen(newTransactionRequested: Boolean, onNewTransactionOpened: () -> Unit) {
     val navController = rememberNavController()
+    // Widget: Nová transakcia nad Prehľadom, takže po uložení sa ukáže Prehľad (spec, tok Nová transakcia).
+    LaunchedEffect(newTransactionRequested) {
+        if (newTransactionRequested) {
+            navController.navigate(Routes.transaction()) {
+                popUpTo(navController.graph.findStartDestination().id)
+            }
+            onNewTransactionOpened()
+        }
+    }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val route = backStackEntry?.destination?.route.orEmpty()
     // Formuláre zaberajú celú obrazovku; lišta je len na prehľadových obrazovkách.
-    val showBar = !route.startsWith("transaction?") && !route.startsWith("account?") && !route.startsWith("rule?") && !route.startsWith("budget?")
+    val showBar = !route.startsWith("transaction?") && !route.startsWith("account?") && !route.startsWith("rule?") && !route.startsWith("budget?") &&
+        !route.startsWith("category?")
     val snackbarHostState = remember { SnackbarHostState() }
     SnackbarEvents(snackbarHostState) { action ->
         when (action) {
@@ -179,6 +206,46 @@ private fun MainScreen() {
                     onAllTransactions = { navController.navigateToTab(Routes.TRANSACTIONS) },
                     onAccount = { navController.navigate(Routes.transactionsOfAccount(it)) },
                     onEdit = { navController.navigate(Routes.transaction(id = it)) },
+                    onSettings = { navController.navigate(Routes.SETTINGS) },
+                )
+            }
+            composable(Routes.SETTINGS) {
+                SettingsScreen(
+                    contentPadding = padding,
+                    onBack = navController::popBackStack,
+                    onCategories = { navController.navigate(Routes.CATEGORIES) },
+                )
+            }
+            composable(Routes.CATEGORIES) {
+                CategoriesScreen(
+                    contentPadding = padding,
+                    onBack = navController::popBackStack,
+                    onOpen = { navController.navigate(Routes.category(id = it)) },
+                    onAdd = { navController.navigate(Routes.category(kind = it)) },
+                )
+            }
+            composable(
+                Routes.CATEGORY_PATTERN,
+                arguments = listOf(
+                    navArgument(CategoryFormViewModel.ARG_ID) {
+                        type = NavType.LongType
+                        defaultValue = -1L
+                    },
+                    navArgument(CategoryFormViewModel.ARG_PARENT) {
+                        type = NavType.LongType
+                        defaultValue = -1L
+                    },
+                    navArgument(CategoryFormViewModel.ARG_KIND) {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                ),
+            ) {
+                CategoryFormScreen(
+                    contentPadding = padding,
+                    onClose = navController::popBackStack,
+                    onOpen = { navController.navigate(Routes.category(id = it)) },
+                    onAddSubcategory = { navController.navigate(Routes.category(parent = it)) },
                 )
             }
             composable(

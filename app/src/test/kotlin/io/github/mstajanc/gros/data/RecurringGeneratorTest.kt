@@ -34,7 +34,9 @@ class RecurringGeneratorTest : DatabaseTest() {
         type = TransactionType.EXPENSE,
         amountCents = cents,
         accountId = account(),
-        categoryId = expenseCategory("Bývanie"),
+        // Názvy kategórií sú jedinečné (G1); pri ďalšom pravidle sa použije už vytvorená.
+        categoryId = categories.observeCategories().first().firstOrNull { it.name == "Bývanie" }?.id
+            ?: expenseCategory("Bývanie"),
         frequency = frequency,
         interval = interval,
         nextDate = nextDate,

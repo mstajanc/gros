@@ -49,6 +49,7 @@ import io.github.mstajanc.gros.ui.common.CenteredContent
 import io.github.mstajanc.gros.ui.common.GrosCard
 import io.github.mstajanc.gros.ui.common.Lookup
 import io.github.mstajanc.gros.ui.common.RowStyle
+import io.github.mstajanc.gros.ui.common.CircleIconButton
 import io.github.mstajanc.gros.ui.common.ScreenHeader
 import io.github.mstajanc.gros.ui.common.ScreenPadding
 import io.github.mstajanc.gros.ui.common.SummaryTile
@@ -111,6 +112,7 @@ fun OverviewScreen(
     onAllTransactions: () -> Unit,
     onAccount: (Long) -> Unit,
     onEdit: (Long) -> Unit,
+    onSettings: () -> Unit,
 ) {
     val viewModel = grosViewModel { container, _ -> OverviewViewModel(container) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -121,7 +123,9 @@ fun OverviewScreen(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 8.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            ScreenHeader(stringResource(R.string.nav_overview), modifier = Modifier.padding(horizontal = ScreenPadding))
+            ScreenHeader(stringResource(R.string.nav_overview), modifier = Modifier.padding(horizontal = ScreenPadding)) {
+                CircleIconButton(R.drawable.ic_settings, stringResource(R.string.settings_open), onSettings)
+            }
             if (!state.loaded) return@Column
 
             GrosCard(modifier = Modifier.padding(horizontal = ScreenPadding), large = true) {

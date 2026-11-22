@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -26,7 +27,17 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[LAST_USED_ACCOUNT] = accountId }
     }
 
+    /** Veľkosť písma v appke; neznáma uložená hodnota padne na štandardnú. */
+    val textSize: Flow<TextSize> = dataStore.data.map { prefs ->
+        TextSize.entries.firstOrNull { it.name == prefs[TEXT_SIZE] } ?: TextSize.STANDARD
+    }
+
+    suspend fun setTextSize(size: TextSize) {
+        dataStore.edit { it[TEXT_SIZE] = size.name }
+    }
+
     private companion object {
         val LAST_USED_ACCOUNT = longPreferencesKey("last_used_account_id")
+        val TEXT_SIZE = stringPreferencesKey("text_size")
     }
 }

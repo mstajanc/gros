@@ -35,15 +35,20 @@ if (!hasReleaseKeystore) {
 
 android {
     namespace = "io.github.mstajanc.gros"
-    compileSdk = 37
+    // Compose BOM 2026.11 vyžaduje platformu 37.1+; targetSdk ostáva 37.
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
 
     defaultConfig {
         applicationId = "io.github.mstajanc.gros"
         minSdk = 34
         targetSdk = 37
         // Pri každom vydaní (GitHub Release pre Obtainium) sa versionCode zvýši.
-        versionCode = 5
-        versionName = "0.4.1"
+        versionCode = 6
+        versionName = "0.5.0"
     }
 
     signingConfigs {

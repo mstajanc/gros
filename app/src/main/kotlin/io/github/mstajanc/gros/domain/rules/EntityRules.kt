@@ -7,7 +7,55 @@ import io.github.mstajanc.gros.domain.model.CategoryKind
 
 object AccountRules {
 
-    fun validateName(name: String): Violation? = if (name.isBlank()) Violation.NAME_BLANK else null
+    /** Najdlhší povolený názov kategórie po orezaní medzier (G1). */
+    const val MAX_NAME_LENGTH = 40
+
+    /**
+     * Názov je povinný, najviac [MAX_NAME_LENGTH] znakov a medzi súrodencami jedinečný bez ohľadu
+     * na veľkosť písmen (G1). Kategória [selfId] sa pri premenovaní s vlastným názvom neporovnáva.
+     */
+    fun validateName(name: String, siblings: List<Category> = emptyList(), selfId: Long = 0): Violation? {
+        val trimmed = name.trim()
+        return when {
+            trimmed.isEmpty() -> Violation.NAME_BLANK
+            trimmed.length > MAX_NAME_LENGTH -> Violation.NAME_TOO_LONG
+            siblings.any { it.id != selfId && it.name.trim().equals(trimmed, ignoreCase = true) } -> Violation.NAME_DUPLICATE
+            else -> null
+        }
+    }
+
+    /** Súrodenci: podkategórie toho istého rodiča, alebo hlavné kategórie rovnakého druhu. */
+    fun siblings(all: List<Category>, parentId: Long?, kind: CategoryKind): List<Category> =
+        all.filter { it.parentId == parentId && (parentId != null || it.kind == kind) }
+
+    /**
+     * Presun pod iného rodiča ([newParent]) alebo povýšenie na hlavnú (`newParent = null`).
+     * Pod iného rodiča smie ísť podkategória a hlavná kategória bez podkategórií, a to len pod
+     * aktívnu hlavnú kategóriu rovnakého druhu (G2).
+     */
+    fun canMove(category: Category, newParent: Category?, hasSubcategories: Boolean): Violation? = when {
+        newParent == null -> null
+        newParent.id == category.id -> Violation.SAME_CATEGORY
+        !newParent.isMain -> Violation.PARENT_NOT_MAIN
+        newParent.kind != category.kind -> Violation.PARENT_KIND_MISMATCH
+        newParent.archived -> Violation.TARGET_ARCHIVED
+        category.isMain && hasSubcategories -> Violation.CATEGORY_HAS_SUBCATEGORIES
+        else -> null
+    }
+
+    /**
+     * Zlúčenie [source] do [target] rovnakého druhu. Cieľ nesmie byť archivovaný (ani jeho rodič)
+     * a hlavná kategória s podkategóriami sa zlučuje len do inej hlavnej kategórie (G2).
+     */
+    fun canMerge(source: Category, target: Category, targetParent: Category?, sourceHasSubcategories: Boolean): Violation? =
+        when {
+            source.id == target.id -> Violation.SAME_CATEGORY
+            source.kind != target.kind -> Violation.CATEGORY_KIND_MISMATCH
+            target.archived || targetParent?.archived == true -> Violation.TARGET_ARCHIVED
+            target.parentId == source.id -> Violation.MERGE_INTO_OWN_SUBCATEGORY
+            sourceHasSubcategories && !target.isMain -> Violation.MERGE_TARGET_NOT_MAIN
+            else -> null
+        }
 
     /** Počiatočný stav a oprava zostatku môžu byť záporné, v absolútnej hodnote najviac [Money.MAX_CENTS]. */
     fun validateEnteredBalance(cents: Long): Violation? =
@@ -44,7 +92,55 @@ object CategoryRules {
             else -> null
         }
 
-    fun validateName(name: String): Violation? = if (name.isBlank()) Violation.NAME_BLANK else null
+    /** Najdlhší povolený názov kategórie po orezaní medzier (G1). */
+    const val MAX_NAME_LENGTH = 40
+
+    /**
+     * Názov je povinný, najviac [MAX_NAME_LENGTH] znakov a medzi súrodencami jedinečný bez ohľadu
+     * na veľkosť písmen (G1). Kategória [selfId] sa pri premenovaní s vlastným názvom neporovnáva.
+     */
+    fun validateName(name: String, siblings: List<Category> = emptyList(), selfId: Long = 0): Violation? {
+        val trimmed = name.trim()
+        return when {
+            trimmed.isEmpty() -> Violation.NAME_BLANK
+            trimmed.length > MAX_NAME_LENGTH -> Violation.NAME_TOO_LONG
+            siblings.any { it.id != selfId && it.name.trim().equals(trimmed, ignoreCase = true) } -> Violation.NAME_DUPLICATE
+            else -> null
+        }
+    }
+
+    /** Súrodenci: podkategórie toho istého rodiča, alebo hlavné kategórie rovnakého druhu. */
+    fun siblings(all: List<Category>, parentId: Long?, kind: CategoryKind): List<Category> =
+        all.filter { it.parentId == parentId && (parentId != null || it.kind == kind) }
+
+    /**
+     * Presun pod iného rodiča ([newParent]) alebo povýšenie na hlavnú (`newParent = null`).
+     * Pod iného rodiča smie ísť podkategória a hlavná kategória bez podkategórií, a to len pod
+     * aktívnu hlavnú kategóriu rovnakého druhu (G2).
+     */
+    fun canMove(category: Category, newParent: Category?, hasSubcategories: Boolean): Violation? = when {
+        newParent == null -> null
+        newParent.id == category.id -> Violation.SAME_CATEGORY
+        !newParent.isMain -> Violation.PARENT_NOT_MAIN
+        newParent.kind != category.kind -> Violation.PARENT_KIND_MISMATCH
+        newParent.archived -> Violation.TARGET_ARCHIVED
+        category.isMain && hasSubcategories -> Violation.CATEGORY_HAS_SUBCATEGORIES
+        else -> null
+    }
+
+    /**
+     * Zlúčenie [source] do [target] rovnakého druhu. Cieľ nesmie byť archivovaný (ani jeho rodič)
+     * a hlavná kategória s podkategóriami sa zlučuje len do inej hlavnej kategórie (G2).
+     */
+    fun canMerge(source: Category, target: Category, targetParent: Category?, sourceHasSubcategories: Boolean): Violation? =
+        when {
+            source.id == target.id -> Violation.SAME_CATEGORY
+            source.kind != target.kind -> Violation.CATEGORY_KIND_MISMATCH
+            target.archived || targetParent?.archived == true -> Violation.TARGET_ARCHIVED
+            target.parentId == source.id -> Violation.MERGE_INTO_OWN_SUBCATEGORY
+            sourceHasSubcategories && !target.isMain -> Violation.MERGE_TARGET_NOT_MAIN
+            else -> null
+        }
 
     /** Podkategória preberá farbu rodiča. */
     fun effectiveColor(requested: Int, parent: Category?): Int = parent?.color ?: requested

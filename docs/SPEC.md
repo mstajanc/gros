@@ -148,7 +148,7 @@ Claude Code mockup na claude.ai neotvorí; záväzné sú tieto tokeny a PNG sn�
 | surface | #171E1B | Karty, riadky, spodná lišta |
 | surfaceVariant | #202925 | Vnorené dlaždice v kartách |
 | outline | #2A3530 | Oddeľovače, vypnutý prepínač, podklad ukazovateľov |
-| onSurface | #EDF2EF | Hlavný text, výdavky |
+| onSurface | #EDF2EF | Hlavný text |
 | onSurfaceVariant | #A3B0A9 | Popisy, sekundárny text |
 | primary | #6EE7B0 | Akcent, príjmy, aktívna záložka, hlavné tlačidlo |
 | onPrimary | #0E1311 | Text na akcente |
@@ -418,3 +418,19 @@ Schválené Mirecom po teste v telefóne.
 - F2 Sumy výdavkov sú v novej farbe `expense` (#FF8A8A): riadky transakcií, karty opakovaných platieb a dlaždice Výdavky na Prehľade, v Transakciách, v Pláne a v Reportoch. Sivé stĺpce výdavkov v ročnom grafe (E4) a oranžové prekročenie rozpočtu (E1) ostávajú.
 - F3 Karta opakovanej platby má v druhom riadku kategóriu („Auto › Palivo · Mesačne · Účet“; pri prevode bez kategórie). Riadok sa nezalamuje, dlhý text končí „…“.
 - F4 Voľba veľkosti písma v appke (Menšie / Štandardné / Väčšie, cca 90 / 100 / 115 % násobené systémovou veľkosťou) pribudne v M5 v Nastaveniach.
+
+## Rozhodnutia k M5 (22. 11. 2026)
+
+Schválené Mirecom spolu s plánom M5. M5 sa vydá v dvoch častiach: v0.5.0 (Nastavenia, kategórie, veľkosť písma, widget) a v0.6.0 (zámok, záloha).
+
+- G1 Názov kategórie je povinný, orezaný o medzery, najviac 40 znakov; v rámci toho istého rodiča (a druhu pri hlavných) nesmú byť dva rovnaké názvy bez ohľadu na veľkosť písmen.
+- G2 Hlavná kategória s podkategóriami sa dá zlúčiť len do inej hlavnej kategórie (inak by vznikla tretia úroveň). Do archivovanej kategórie sa zlučovať ani presúvať nedá.
+- G3 Presunutá alebo povýšená kategória sa zaradí na koniec svojho nového rodiča.
+- G4 Obrazovka zámku: pozadie appky, logo „G“ a tlačidlo „Odomknúť“; systémový dialóg sa ukáže sám a tlačidlo ho vyvolá znova.
+- G5 Zapnutie zámku vyžaduje jedno úspešné overenie; vypnutie nie.
+- G6 Pri importe sa nesprávne heslo a poškodený obsah hlásia spolu („Nesprávne heslo alebo poškodený súbor“); cudzí súbor a novšia verzia majú vlastné hlásenia.
+- G7 Pri existujúcej inštalácii sa za prvé spustenie pre pripomienku zálohy považuje prvé spustenie verzie so zálohou.
+- G8 Pruh pripomienky na Prehľade: „Posledná záloha pred N dňami“ alebo „Zatiaľ žiadna záloha“, s tlačidlom Zálohovať, ktoré otvorí Nastavenia → Záloha.
+- G9 Widget je 1 × 1 okrúhle tlačidlo + v akcentovej farbe s náhľadom v zozname widgetov.
+- G10 Na začiatku M5 sa aktualizovali knižnice (Compose BOM 2026.11.01, lifecycle 2.11.1, AGP 9.5.2, Gradle 9.9.2, Robolectric 4.18.1); compileSdk je 37.2, targetSdk ostáva 37.
+- G11 Doplnené pri implementácii (nadväzuje na pravidlo rozpočtov pri zlúčení): keď sa hlavná kategória presunie pod inú alebo zlúči, jej rozpočet prejde na novú hlavnú kategóriu, ak tá rozpočet nemá; inak zanikne. Pri zlúčení hlavnej kategórie sa rovnomenná podkategória zlúči do existujúcej podkategórie cieľa, aby nevznikla duplicita (G1). Podkategórie sa spravujú v detaile hlavnej kategórie (tam sa mení aj ich poradie).

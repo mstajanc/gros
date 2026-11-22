@@ -106,9 +106,9 @@
     <string name="accounts_archived">Archivované</string>
     <string name="accounts_restore">Obnoviť</string>
     <string name="accounts_edit">Upraviť účet %1$s</string>
-    <string name="accounts_drag">Zmeniť poradie účtu %1$s</string>
-    <string name="accounts_move_up">Posunúť vyššie</string>
-    <string name="accounts_move_down">Posunúť nižšie</string>
+    <string name="reorder_drag">Zmeniť poradie: %1$s</string>
+    <string name="reorder_move_up">Posunúť vyššie</string>
+    <string name="reorder_move_down">Posunúť nižšie</string>
 
     <!-- Úprava účtu -->
     <string name="account_new">Nový účet</string>
@@ -261,4 +261,62 @@
     <string name="report_empty">Žiadne výdavky v tomto období.</string>
     <string name="report_expanded">rozbalené</string>
     <string name="report_collapsed">zbalené</string>
+    <!-- M5: Nastavenia -->
+    <string name="settings_open">Nastavenia</string>
+    <string name="settings_title">Nastavenia</string>
+    <string name="settings_categories">Kategórie</string>
+    <string name="settings_categories_hint">Vytvorenie, poradie, presun, zlúčenie, archivácia</string>
+    <string name="settings_appearance">Vzhľad</string>
+    <string name="settings_text_size">Veľkosť písma</string>
+    <string name="settings_text_small">Menšie</string>
+    <string name="settings_text_standard">Štandardné</string>
+    <string name="settings_text_large">Väčšie</string>
+    <string name="settings_about">O aplikácii</string>
+    <string name="settings_version">Groš %1$s</string>
+    <string name="settings_about_offline">Bez sieťového povolenia: dáta neopustia telefón.</string>
+    <string name="settings_about_license">Licencia GPL-3.0.</string>
+    <string name="settings_about_third_party">Písma Inter a Space Grotesk (licencia OFL), ikony Lucide (licencia ISC).</string>
+    <!-- M5: Kategórie -->
+    <string name="categories_title">Kategórie</string>
+    <string name="categories_add">+ Nová kategória</string>
+    <string name="categories_hint">Poradie zmeníš potiahnutím za úchyt. Podkategórie spravuješ po ťuknutí na hlavnú kategóriu.</string>
+    <string name="categories_no_subcategories">bez podkategórií</string>
+    <string name="category_new">Nová kategória</string>
+    <string name="category_new_sub">Nová podkategória</string>
+    <string name="category_edit">Upraviť kategóriu</string>
+    <string name="category_parent">Podkategória kategórie %1$s</string>
+    <string name="category_name">Názov</string>
+    <string name="category_color">Farba</string>
+    <string name="category_subcategories">Podkategórie</string>
+    <string name="category_add_sub">+ Pridať podkategóriu</string>
+    <string name="category_actions">Ďalšie akcie</string>
+    <string name="category_actions_hint">Kategóriu s transakciami nemožno zmazať; archivuj ju alebo zlúč do inej.</string>
+    <string name="category_move">Presunúť</string>
+    <string name="category_move_title">Presunúť pod</string>
+    <string name="category_move_to_main">Hlavná kategória (bez nadradenej)</string>
+    <string name="category_merge">Zlúčiť do…</string>
+    <string name="category_merge_title">Zlúčiť do kategórie</string>
+    <string name="category_merge_confirm_title">Zlúčiť do „%1$s“?</string>
+    <string name="category_merge_confirm_text">Transakcie (%1$d) a opakované platby (%2$d) prejdú do kategórie %3$s a kategória %4$s sa zmaže.</string>
+    <string name="category_merge_confirm_subs">Podkategórie sa presunú pod cieľovú kategóriu; rovnomenné sa zlúčia.</string>
+    <string name="category_merge_confirm">Zlúčiť</string>
+    <string name="category_archive">Archivovať</string>
+    <string name="category_archive_title">Archivovať kategóriu?</string>
+    <string name="category_archive_text">Pri nových záznamoch sa nebude ponúkať; existujúce transakcie ostanú.</string>
+    <string name="category_archive_text_rules">Pri nových záznamoch sa nebude ponúkať. Pozastavia sa opakované platby: %1$s.</string>
+    <string name="category_delete_title">Zmazať kategóriu?</string>
+    <string name="category_delete_text">Kategória sa natrvalo odstráni.</string>
+    <string name="category_error_duplicate">Kategória s týmto názvom tu už existuje.</string>
+    <string name="category_error_too_long">Názov môže mať najviac 40 znakov.</string>
+    <string name="category_error_last_main">Aspoň jedna hlavná kategória tohto druhu musí ostať aktívna.</string>
+    <string name="category_error_generic">Zmenu nebolo možné uložiť.</string>
+    <string name="color_green">Zelená</string>
+    <string name="color_purple">Fialová</string>
+    <string name="color_orange">Oranžová</string>
+    <string name="color_blue">Modrá</string>
+    <string name="color_pink">Ružová</string>
+    <string name="color_grey">Sivá</string>
+    <!-- M5: Widget -->
+    <string name="widget_label">Groš – nová transakcia</string>
+    <string name="widget_description">Jedno tlačidlo, ktoré otvorí zápis novej transakcie.</string>
 </resources>

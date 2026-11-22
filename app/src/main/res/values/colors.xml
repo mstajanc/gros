@@ -3,4 +3,5 @@
     <!-- Len farby potrebné mimo Compose (okno pred vykreslením, ikona). Ostatné tokeny sú v ui/theme. -->
     <color name="gros_background">#0E1311</color>
     <color name="gros_primary">#6EE7B0</color>
+    <color name="gros_on_primary">#0E1311</color>
 </resources>
