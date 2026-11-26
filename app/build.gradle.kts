@@ -4,6 +4,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
 }
@@ -47,8 +48,8 @@ android {
         minSdk = 34
         targetSdk = 37
         // Pri každom vydaní (GitHub Release pre Obtainium) sa versionCode zvýši.
-        versionCode = 6
-        versionName = "0.5.0"
+        versionCode = 7
+        versionName = "0.6.0"
     }
 
     signingConfigs {
@@ -130,6 +131,9 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.sqlite.framework)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.fragment)
     ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)

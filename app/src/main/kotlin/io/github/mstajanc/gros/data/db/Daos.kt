@@ -305,3 +305,44 @@ interface BudgetDao {
     @Query("DELETE FROM budgets WHERE id = :id")
     suspend fun deleteById(id: Long)
 }
+
+/** Záloha: hromadné čítanie a úplná náhrada všetkých tabuliek (volá sa v jednej DB transakcii). */
+@Dao
+interface BackupDao {
+    @Query("SELECT * FROM budgets ORDER BY id")
+    suspend fun getBudgets(): List<BudgetEntity>
+
+    @Query("DELETE FROM transactions")
+    suspend fun deleteTransactions()
+
+    @Query("DELETE FROM budgets")
+    suspend fun deleteBudgets()
+
+    @Query("DELETE FROM recurring_rules")
+    suspend fun deleteRules()
+
+    /** Podkategórie pred hlavnými, lebo `parentId` má RESTRICT. */
+    @Query("DELETE FROM categories WHERE parentId IS NOT NULL")
+    suspend fun deleteSubcategories()
+
+    @Query("DELETE FROM categories")
+    suspend fun deleteCategories()
+
+    @Query("DELETE FROM accounts")
+    suspend fun deleteAccounts()
+
+    @Insert
+    suspend fun insertAccounts(accounts: List<AccountEntity>)
+
+    @Insert
+    suspend fun insertCategories(categories: List<CategoryEntity>)
+
+    @Insert
+    suspend fun insertRules(rules: List<RecurringRuleEntity>)
+
+    @Insert
+    suspend fun insertTransactions(transactions: List<TransactionEntity>)
+
+    @Insert
+    suspend fun insertBudgets(budgets: List<BudgetEntity>)
+}

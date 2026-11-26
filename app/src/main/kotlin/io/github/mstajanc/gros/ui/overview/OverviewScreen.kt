@@ -34,6 +34,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.mstajanc.gros.AppContainer
 import io.github.mstajanc.gros.R
 import io.github.mstajanc.gros.domain.AccountBalance
+import io.github.mstajanc.gros.domain.BackupReminder
 import io.github.mstajanc.gros.domain.BalanceCalculator
 import io.github.mstajanc.gros.domain.ListSummary
 import io.github.mstajanc.gros.domain.MoneyFormatter
@@ -52,6 +53,7 @@ import io.github.mstajanc.gros.ui.common.RowStyle
 import io.github.mstajanc.gros.ui.common.CircleIconButton
 import io.github.mstajanc.gros.ui.common.ScreenHeader
 import io.github.mstajanc.gros.ui.common.ScreenPadding
+import io.github.mstajanc.gros.ui.common.SecondaryButton
 import io.github.mstajanc.gros.ui.common.SummaryTile
 import io.github.mstajanc.gros.ui.common.TransactionRow
 import io.github.mstajanc.gros.ui.common.accountsOfText
@@ -78,7 +80,12 @@ data class OverviewState(
     val month: ListSummary = ListSummary(0, 0, 0),
     val recent: List<Transaction> = emptyList(),
     val lookup: Lookup = Lookup(),
+    /** Pruh „Zálohovať“ (G8); `null` = neukazuje sa. */
+    val reminder: BackupReminderInfo? = null,
 )
+
+/** [lastBackup] `null` = zatiaľ žiadna záloha; inak pred koľkými dňami bola. */
+data class BackupReminderInfo(val lastBackup: Boolean, val days: Long)
 
 class OverviewViewModel(container: AppContainer) : ViewModel() {
 
@@ -92,7 +99,8 @@ class OverviewViewModel(container: AppContainer) : ViewModel() {
             categoryIds = null,
         ),
         container.transactionRepository.observeRecent(RECENT_COUNT),
-    ) { balances, categories, monthTransactions, recent ->
+        reminder(container),
+    ) { balances, categories, monthTransactions, recent, reminder ->
         OverviewState(
             loaded = true,
             today = container.today(),
@@ -101,8 +109,22 @@ class OverviewViewModel(container: AppContainer) : ViewModel() {
             month = TransactionList.summarize(monthTransactions),
             recent = recent,
             lookup = Lookup.of(balances.map { it.account }, categories),
+            reminder = reminder,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), OverviewState(today = today))
+
+    private fun reminder(container: AppContainer) = combine(
+        container.settingsRepository.backupReminderEnabled,
+        container.settingsRepository.lastBackupEpochDay,
+        container.settingsRepository.firstLaunchEpochDay,
+    ) { enabled, last, first ->
+        val todayDay = container.today().toEpochDay()
+        if (!BackupReminder.shouldShow(enabled, last, first, todayDay)) {
+            null
+        } else {
+            BackupReminderInfo(lastBackup = last != null, days = BackupReminder.daysSince(last, first, todayDay) ?: 0)
+        }
+    }
 }
 
 @Composable
@@ -127,6 +149,7 @@ fun OverviewScreen(
                 CircleIconButton(R.drawable.ic_settings, stringResource(R.string.settings_open), onSettings)
             }
             if (!state.loaded) return@Column
+            state.reminder?.let { BackupBar(it, onBackup = onSettings) }
 
             GrosCard(modifier = Modifier.padding(horizontal = ScreenPadding), large = true) {
                 Text(
@@ -227,6 +250,33 @@ private fun SectionHeader(title: String, action: String, onAction: () -> Unit) {
                 .clip(GrosShapes.pill)
                 .clickable(role = Role.Button, onClick = onAction)
                 .padding(horizontal = 8.dp, vertical = 14.dp),
+        )
+    }
+}
+
+/** Nevtieravý pruh pripomienky zálohy (G8); Zálohovať otvorí Nastavenia so zálohou. */
+@Composable
+private fun BackupBar(info: BackupReminderInfo, onBackup: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(horizontal = ScreenPadding)
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface, GrosShapes.cardMedium)
+            .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            if (info.lastBackup) stringResource(R.string.overview_backup_days, info.days) else stringResource(R.string.overview_backup_none),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        SecondaryButton(
+            stringResource(R.string.overview_backup_action),
+            onClick = onBackup,
+            contentColor = MaterialTheme.colorScheme.primary,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
         )
     }
 }

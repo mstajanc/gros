@@ -1,6 +1,8 @@
 package io.github.mstajanc.gros
 
 import android.content.Context
+import io.github.mstajanc.gros.data.backup.BackupData
+import io.github.mstajanc.gros.data.backup.BackupRepository
 import io.github.mstajanc.gros.data.db.GrosDatabase
 import io.github.mstajanc.gros.data.recurring.RecurringGenerator
 import io.github.mstajanc.gros.data.repository.AccountRepository
@@ -11,6 +13,7 @@ import io.github.mstajanc.gros.data.repository.ReportRepository
 import io.github.mstajanc.gros.data.repository.SetupRepository
 import io.github.mstajanc.gros.data.repository.TransactionRepository
 import io.github.mstajanc.gros.data.settings.SettingsRepository
+import io.github.mstajanc.gros.domain.AppLock
 import io.github.mstajanc.gros.ui.common.SnackbarAction
 import io.github.mstajanc.gros.ui.common.SnackbarBus
 import io.github.mstajanc.gros.ui.common.SnackbarEvent
@@ -20,7 +23,8 @@ import java.time.LocalDate
 /** Ručný kontajner závislostí (namiesto Hiltu). Všetko vzniká až pri prvom použití. */
 class AppContainer(context: Context) {
 
-    private val appContext: Context = context.applicationContext
+    /** Kontext aplikácie (napr. pre ContentResolver pri zálohe). */
+    val appContext: Context = context.applicationContext
 
     /** Jediný zdroj aktuálneho času a dátumu; v testoch sa nahrádza pevnými hodinami. */
     val clock: Clock = Clock.systemDefaultZone()
@@ -38,6 +42,20 @@ class AppContainer(context: Context) {
     val reportRepository: ReportRepository by lazy { ReportRepository(database) }
     val setupRepository: SetupRepository by lazy { SetupRepository(database) }
     val settingsRepository: SettingsRepository by lazy { SettingsRepository(appContext) }
+    val backupRepository: BackupRepository by lazy { BackupRepository(database) }
+
+    /** Zámok appky žije v procese, aby prežil otočenie obrazovky. */
+    val appLock = AppLock { clock.millis() }
+
+    /**
+     * Import zálohy: nahradí dáta, vynuluje posledný použitý účet a spustí generátor opakovaní,
+     * takže sa dobehnú zmeškané platby zo staršej zálohy (import, krok 4).
+     */
+    suspend fun restoreBackup(data: BackupData) {
+        backupRepository.restore(data)
+        settingsRepository.clearLastUsedAccountId()
+        runRecurring()
+    }
 
     /** Snackbary, ktoré majú prežiť zatvorenie obrazovky (Uložené, Späť). */
     val snackbarBus = SnackbarBus()

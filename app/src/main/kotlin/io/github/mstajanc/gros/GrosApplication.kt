@@ -20,6 +20,11 @@ class GrosApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        appScope.launch {
+            // Pripomienka zálohy bez akejkoľvek zálohy sa ráta od prvého spustenia (B12, G7).
+            container.settingsRepository.recordFirstLaunch(container.today().toEpochDay())
+            container.settingsRepository.lockEnabled.collect(container.appLock::onEnabledChanged)
+        }
         // Generátor opakovaných platieb beží pri štarte appky a pri každom návrate do popredia.
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             object : DefaultLifecycleObserver {

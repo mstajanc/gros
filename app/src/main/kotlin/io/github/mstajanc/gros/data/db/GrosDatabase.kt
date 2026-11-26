@@ -36,6 +36,7 @@ abstract class GrosDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun recurringRuleDao(): RecurringRuleDao
     abstract fun budgetDao(): BudgetDao
+    abstract fun backupDao(): BackupDao
 
     companion object {
         const val NAME = "gros.db"

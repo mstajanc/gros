@@ -55,6 +55,7 @@ import io.github.mstajanc.gros.ui.common.CenteredContent
 import io.github.mstajanc.gros.ui.common.FieldTile
 import io.github.mstajanc.gros.ui.common.GrosIcon
 import io.github.mstajanc.gros.ui.common.OptionSheet
+import io.github.mstajanc.gros.ui.backup.rememberBackupFlow
 import io.github.mstajanc.gros.ui.common.PrimaryButton
 import io.github.mstajanc.gros.ui.common.ScreenPadding
 import io.github.mstajanc.gros.ui.common.SecondaryButton
@@ -192,6 +193,7 @@ fun OnboardingScreen() {
     }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        val backup = rememberBackupFlow()
         CenteredContent(modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
             Column(modifier = Modifier.fillMaxSize().padding(horizontal = ScreenPadding)) {
                 Column(
@@ -204,12 +206,20 @@ fun OnboardingScreen() {
                         OnboardingStep.CATEGORIES -> CategoriesStep(state, categoryNames, viewModel::toggle)
                     }
                 }
-                Column(modifier = Modifier.padding(bottom = 16.dp)) {
+                Column(modifier = Modifier.padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     when (state.step) {
-                        OnboardingStep.WELCOME -> PrimaryButton(
-                            stringResource(R.string.onboarding_start),
-                            onClick = { viewModel.go(OnboardingStep.ACCOUNTS) },
-                        )
+                        OnboardingStep.WELCOME -> {
+                            PrimaryButton(
+                                stringResource(R.string.onboarding_start),
+                                onClick = { viewModel.go(OnboardingStep.ACCOUNTS) },
+                            )
+                            // Obnova na novom telefóne: po importe pribudnú účty a sprievodca sa zavrie sám.
+                            SecondaryButton(
+                                stringResource(R.string.onboarding_restore),
+                                onClick = backup.import,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
 
                         OnboardingStep.ACCOUNTS -> PrimaryButton(
                             stringResource(R.string.action_continue),

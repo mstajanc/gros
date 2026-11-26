@@ -319,4 +319,51 @@
     <!-- M5: Widget -->
     <string name="widget_label">Groš – nová transakcia</string>
     <string name="widget_description">Jedno tlačidlo, ktoré otvorí zápis novej transakcie.</string>
+    <!-- M5: Zámok -->
+    <string name="lock_title">Groš je zamknutý</string>
+    <string name="lock_text">Odomkni odtlačkom prsta, tvárou alebo PIN kódom telefónu.</string>
+    <string name="lock_unlock">Odomknúť</string>
+    <string name="lock_prompt_title">Odomknúť Groš</string>
+    <string name="lock_enable_prompt">Zapnúť zámok appky</string>
+    <string name="lock_missing_title">Zámok sa nepoužil</string>
+    <string name="lock_missing_text">Telefón nemá nastavený zámok obrazovky, preto sa appka otvorila bez overenia. Nastav PIN, vzor alebo heslo telefónu, alebo vypni zámok v Nastaveniach.</string>
+    <string name="settings_security">Zabezpečenie</string>
+    <string name="settings_lock">Zámok appky</string>
+    <string name="settings_lock_hint">Pri spustení a po minúte na pozadí appka vyžiada odtlačok, tvár alebo PIN telefónu. Kým je zapnutý, nedajú sa robiť snímky obrazovky. Zámok chráni prístup v appke, dáta nešifruje.</string>
+    <string name="settings_lock_unavailable">Telefón nemá nastavený zámok obrazovky. Najprv nastav PIN, vzor alebo heslo v nastaveniach telefónu.</string>
+    <!-- M5: Záloha -->
+    <string name="settings_backup">Záloha</string>
+    <string name="settings_last_backup">Posledná záloha: %1$s</string>
+    <string name="settings_no_backup">Zatiaľ žiadna záloha.</string>
+    <string name="settings_export">Exportovať</string>
+    <string name="settings_import">Importovať</string>
+    <string name="settings_backup_hint">Záloha je jeden šifrovaný súbor; ulož ho mimo telefónu. Import nahradí všetky súčasné dáta.</string>
+    <string name="settings_backup_reminder">Pripomínať zálohu</string>
+    <string name="overview_backup_days">Posledná záloha pred %1$d dňami</string>
+    <string name="overview_backup_none">Zatiaľ žiadna záloha</string>
+    <string name="overview_backup_action">Zálohovať</string>
+    <string name="onboarding_restore">Obnoviť zo zálohy</string>
+    <string name="backup_export_title">Heslo zálohy</string>
+    <string name="backup_export_warning">Heslo sa nikde neukladá. Bez neho sa záloha nedá obnoviť.</string>
+    <string name="backup_password">Heslo</string>
+    <string name="backup_password_again">Heslo znova</string>
+    <string name="backup_password_short">Heslo musí mať aspoň %1$d znakov.</string>
+    <string name="backup_password_mismatch">Heslá sa nezhodujú.</string>
+    <string name="backup_exporting">Šifrujem zálohu…</string>
+    <string name="backup_exported">Záloha uložená</string>
+    <string name="backup_import_title">Obnoviť zo zálohy</string>
+    <string name="backup_import_text">Zadaj heslo, ktorým bola záloha zašifrovaná.</string>
+    <string name="backup_opening">Otváram zálohu…</string>
+    <string name="backup_import_confirm_title">Nahradiť všetky dáta?</string>
+    <string name="backup_import_confirm_text">Záloha obsahuje účty: %1$d, transakcie: %2$d. Import nahradí všetky súčasné dáta v appke. Ak je záloha staršia, dobehnú sa zmeškané opakované platby.</string>
+    <string name="backup_import_confirm">Nahradiť</string>
+    <string name="backup_restoring">Obnovujem dáta…</string>
+    <string name="backup_restored">Záloha obnovená</string>
+    <string name="backup_error_title">Záloha</string>
+    <string name="backup_error_not_backup">Súbor nie je záloha Groša.</string>
+    <string name="backup_error_newer">Záloha je z novšej verzie Groša. Aktualizuj appku a skús znova.</string>
+    <string name="backup_error_password">Nesprávne heslo alebo poškodený súbor.</string>
+    <string name="backup_error_invalid">Záloha obsahuje neplatné dáta, preto sa neobnovila. Súčasné dáta ostali bez zmeny.</string>
+    <string name="backup_error_read">Súbor sa nepodarilo načítať.</string>
+    <string name="backup_error_write">Zálohu sa nepodarilo uložiť.</string>
 </resources>

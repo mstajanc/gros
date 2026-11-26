@@ -63,6 +63,7 @@ import io.github.mstajanc.gros.ui.categories.CategoryFormViewModel
 import io.github.mstajanc.gros.ui.settings.SettingsScreen
 import io.github.mstajanc.gros.domain.model.CategoryKind
 import io.github.mstajanc.gros.ui.common.CenteredContent
+import io.github.mstajanc.gros.ui.common.ConfirmDialog
 import io.github.mstajanc.gros.ui.common.GrosIcon
 import io.github.mstajanc.gros.ui.common.ScreenHeader
 import io.github.mstajanc.gros.ui.common.ScreenPadding
@@ -132,6 +133,19 @@ fun GrosApp(newTransactionRequested: Boolean = false, onNewTransactionOpened: ()
     val container = appContainer()
     val accountCountFlow = remember { container.accountRepository.observeAccountCount() }
     val accountCount by accountCountFlow.collectAsStateWithLifecycle(initialValue = null)
+
+    // Zámok je zapnutý, ale telefón už nemá zámok obrazovky: appka sa otvorila bez overenia.
+    val missingCredential by container.appLock.missingCredential.collectAsStateWithLifecycle()
+    if (missingCredential) {
+        ConfirmDialog(
+            title = stringResource(R.string.lock_missing_title),
+            text = stringResource(R.string.lock_missing_text),
+            confirmLabel = stringResource(R.string.action_close),
+            onConfirm = container.appLock::dismissMissingCredential,
+            onDismiss = container.appLock::dismissMissingCredential,
+            destructive = false,
+        )
+    }
 
     when (accountCount) {
         null -> Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {}

@@ -3,6 +3,7 @@ package io.github.mstajanc.gros.data.settings
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -36,8 +37,45 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[TEXT_SIZE] = size.name }
     }
 
+    /** Po importe zálohy sa posledný použitý účet vynuluje (import, krok 4). */
+    suspend fun clearLastUsedAccountId() {
+        dataStore.edit { it.remove(LAST_USED_ACCOUNT) }
+    }
+
+    /** Zámok appky (biometria alebo PIN zariadenia). */
+    val lockEnabled: Flow<Boolean> = dataStore.data.map { it[LOCK_ENABLED] ?: false }
+
+    suspend fun setLockEnabled(enabled: Boolean) {
+        dataStore.edit { it[LOCK_ENABLED] = enabled }
+    }
+
+    /** Deň poslednej úspešnej zálohy (epoch day) alebo `null`. */
+    val lastBackupEpochDay: Flow<Long?> = dataStore.data.map { it[LAST_BACKUP] }
+
+    suspend fun setLastBackupEpochDay(epochDay: Long) {
+        dataStore.edit { it[LAST_BACKUP] = epochDay }
+    }
+
+    /** Deň prvého spustenia verzie so zálohou; od neho sa ráta pripomienka bez zálohy (B12, G7). */
+    val firstLaunchEpochDay: Flow<Long?> = dataStore.data.map { it[FIRST_LAUNCH] }
+
+    suspend fun recordFirstLaunch(epochDay: Long) {
+        dataStore.edit { if (it[FIRST_LAUNCH] == null) it[FIRST_LAUNCH] = epochDay }
+    }
+
+    /** Pruh „Zálohovať“ na Prehľade sa dá vypnúť. */
+    val backupReminderEnabled: Flow<Boolean> = dataStore.data.map { it[BACKUP_REMINDER] ?: true }
+
+    suspend fun setBackupReminderEnabled(enabled: Boolean) {
+        dataStore.edit { it[BACKUP_REMINDER] = enabled }
+    }
+
     private companion object {
         val LAST_USED_ACCOUNT = longPreferencesKey("last_used_account_id")
         val TEXT_SIZE = stringPreferencesKey("text_size")
+        val LOCK_ENABLED = booleanPreferencesKey("lock_enabled")
+        val LAST_BACKUP = longPreferencesKey("last_backup_epoch_day")
+        val FIRST_LAUNCH = longPreferencesKey("first_launch_epoch_day")
+        val BACKUP_REMINDER = booleanPreferencesKey("backup_reminder_enabled")
     }
 }
