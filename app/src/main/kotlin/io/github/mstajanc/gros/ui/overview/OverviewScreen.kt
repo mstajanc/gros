@@ -54,6 +54,7 @@ import io.github.mstajanc.gros.ui.common.CircleIconButton
 import io.github.mstajanc.gros.ui.common.ScreenHeader
 import io.github.mstajanc.gros.ui.common.ScreenPadding
 import io.github.mstajanc.gros.ui.common.SecondaryButton
+import io.github.mstajanc.gros.ui.common.AdaptiveRow
 import io.github.mstajanc.gros.ui.common.SummaryTile
 import io.github.mstajanc.gros.ui.common.TransactionRow
 import io.github.mstajanc.gros.ui.common.accountsOfText
@@ -165,17 +166,15 @@ fun OverviewScreen(
                     style = MaterialTheme.typography.displayMedium,
                     modifier = Modifier.padding(top = 6.dp, bottom = 14.dp),
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AdaptiveRow {
                     SummaryTile(
                         label = stringResource(R.string.overview_income, monthName),
                         amount = MoneyFormatter.format(state.month.incomeCents, SignDisplay.ALWAYS),
-                        modifier = Modifier.weight(1f),
                         amountColor = MaterialTheme.colorScheme.primary,
                     )
                     SummaryTile(
                         label = stringResource(R.string.overview_expenses, monthName),
                         amount = MoneyFormatter.format(-state.month.expenseCents),
-                        modifier = Modifier.weight(1f),
                         amountColor = GrosTheme.colors.expense,
                     )
                 }

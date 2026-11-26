@@ -1,13 +1,17 @@
 package io.github.mstajanc.gros
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
@@ -59,11 +63,16 @@ class MainActivity : FragmentActivity() {
         val lock = container.appLock
         setContent {
             val textSize by settings.textSize.collectAsStateWithLifecycle(initialValue = TextSize.STANDARD)
+            // Kým sa voľba témy nenačíta, ostane viditeľné len pozadie okna (bez bliknutia inej témy).
+            val themeMode by settings.themeMode.collectAsStateWithLifecycle(initialValue = null)
             val lockState by lock.state.collectAsStateWithLifecycle()
+            val mode = themeMode ?: return@setContent
+            val dark = mode.isDark(systemDark = isSystemInDarkTheme())
+            LaunchedEffect(dark) { applySystemBars(dark) }
             // Pri zamknutí sa obsah appky odstráni z kompozície (nič sa nevykreslí), jeho stav
             // (otvorená obrazovka, rozpísaný formulár) sa však uloží a po odomknutí obnoví.
             val savedState = rememberSaveableStateHolder()
-            GrosTheme(textScale = textSize.factor) {
+            GrosTheme(dark = dark, textSize = textSize) {
                 when (lockState) {
                     LockState.LOADING -> Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {}
                     LockState.LOCKED -> LockScreen(lock)
@@ -76,6 +85,16 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    /** Ikony systémových líšt: svetlé na tmavej téme, tmavé na svetlej. Lišty sú priehľadné (edge-to-edge). */
+    private fun applySystemBars(dark: Boolean) {
+        val style = if (dark) {
+            SystemBarStyle.dark(Color.TRANSPARENT)
+        } else {
+            SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        }
+        enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
     }
 
     override fun onStart() {

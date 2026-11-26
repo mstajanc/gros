@@ -1,5 +1,6 @@
 package io.github.mstajanc.gros.ui
 
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -495,6 +496,14 @@ private fun TabItem(tab: Tab, selected: Boolean, onTab: (String) -> Unit, modifi
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
     ) {
         GrosIcon(tab.icon, contentDescription = null, tint = color)
-        Text(stringResource(tab.label), style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
+        // Popisok je vždy na jeden riadok; pri veľkom písme sa radšej zmenší, než aby sa orezal.
+        val style = MaterialTheme.typography.labelSmall
+        Text(
+            stringResource(tab.label),
+            style = style,
+            color = color,
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(minFontSize = style.fontSize * 0.4f, maxFontSize = style.fontSize),
+        )
     }
 }

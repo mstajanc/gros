@@ -357,6 +357,14 @@ private fun CategoryChips(state: TransactionFormState, onCategory: (Long) -> Uni
     val selectedElsewhere = all.firstOrNull { it.id == selectedId && it !in shown }
 
     ChipSection(stringResource(R.string.form_category)) {
+        // Všetky kategórie druhu môžu byť archivované; bez kategórie sa výdavok ani príjem uložiť nedá.
+        if (all.isEmpty()) {
+            Text(
+                stringResource(R.string.form_no_categories),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         shown.forEach { category ->
             ChoiceChip(category.name, selected = category.id == selectedId, onClick = { onCategory(category.id) })
         }

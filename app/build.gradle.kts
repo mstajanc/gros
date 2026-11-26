@@ -48,8 +48,8 @@ android {
         minSdk = 34
         targetSdk = 37
         // Pri každom vydaní (GitHub Release pre Obtainium) sa versionCode zvýši.
-        versionCode = 7
-        versionName = "0.6.0"
+        versionCode = 8
+        versionName = "1.0.0"
     }
 
     signingConfigs {
@@ -141,6 +141,10 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    // Compose UI testy bežia v Robolectricu; testovacia Activity sa pridá len do debug buildu.
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 
 /**

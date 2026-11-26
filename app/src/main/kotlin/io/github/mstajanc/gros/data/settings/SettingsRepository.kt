@@ -37,6 +37,15 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[TEXT_SIZE] = size.name }
     }
 
+    /** Téma appky (H1); neznáma uložená hodnota padne na predvolenú. */
+    val themeMode: Flow<ThemeMode> = dataStore.data.map { prefs ->
+        ThemeMode.entries.firstOrNull { it.name == prefs[THEME_MODE] } ?: ThemeMode.DEFAULT
+    }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        dataStore.edit { it[THEME_MODE] = mode.name }
+    }
+
     /** Po importe zálohy sa posledný použitý účet vynuluje (import, krok 4). */
     suspend fun clearLastUsedAccountId() {
         dataStore.edit { it.remove(LAST_USED_ACCOUNT) }
@@ -73,6 +82,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     private companion object {
         val LAST_USED_ACCOUNT = longPreferencesKey("last_used_account_id")
         val TEXT_SIZE = stringPreferencesKey("text_size")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
         val LOCK_ENABLED = booleanPreferencesKey("lock_enabled")
         val LAST_BACKUP = longPreferencesKey("last_backup_epoch_day")
         val FIRST_LAUNCH = longPreferencesKey("first_launch_epoch_day")

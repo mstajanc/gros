@@ -64,6 +64,7 @@
     <string name="search_open">Hľadať</string>
     <string name="search_hint">Hľadať v poznámkach a kategóriách</string>
     <string name="search_info">Hľadá sa v poznámkach a názvoch kategórií naprieč všetkými účtami.</string>
+    <string name="search_empty">Nič sa nenašlo. Hľadá sa v poznámkach transakcií.</string>
     <string name="list_empty">Žiadne transakcie pre tento výber.</string>
     <string name="snackbar_saved">Uložené</string>
     <string name="snackbar_deleted">Transakcia zmazaná</string>
@@ -267,6 +268,10 @@
     <string name="settings_categories">Kategórie</string>
     <string name="settings_categories_hint">Vytvorenie, poradie, presun, zlúčenie, archivácia</string>
     <string name="settings_appearance">Vzhľad</string>
+    <string name="settings_theme">Téma</string>
+    <string name="settings_theme_system">Systém</string>
+    <string name="settings_theme_light">Svetlá</string>
+    <string name="settings_theme_dark">Tmavá</string>
     <string name="settings_text_size">Veľkosť písma</string>
     <string name="settings_text_small">Menšie</string>
     <string name="settings_text_standard">Štandardné</string>
@@ -366,4 +371,5 @@
     <string name="backup_error_invalid">Záloha obsahuje neplatné dáta, preto sa neobnovila. Súčasné dáta ostali bez zmeny.</string>
     <string name="backup_error_read">Súbor sa nepodarilo načítať.</string>
     <string name="backup_error_write">Zálohu sa nepodarilo uložiť.</string>
+    <string name="form_no_categories">Žiadna aktívna kategória. Pridáš ju v Nastaveniach → Kategórie.</string>
 </resources>

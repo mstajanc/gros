@@ -35,6 +35,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.mstajanc.gros.AppContainer
 import io.github.mstajanc.gros.R
 import io.github.mstajanc.gros.data.settings.TextSize
+import io.github.mstajanc.gros.data.settings.ThemeMode
 import io.github.mstajanc.gros.domain.SlovakDates
 import io.github.mstajanc.gros.ui.backup.rememberBackupFlow
 import io.github.mstajanc.gros.ui.common.CenteredContent
@@ -67,6 +68,13 @@ class SettingsViewModel(container: AppContainer) : ViewModel() {
         viewModelScope.launch { settings.setTextSize(size) }
     }
 
+    val themeMode: StateFlow<ThemeMode> =
+        settings.themeMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.DEFAULT)
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch { settings.setThemeMode(mode) }
+    }
+
     val lockEnabled: StateFlow<Boolean> =
         settings.lockEnabled.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
@@ -92,6 +100,7 @@ class SettingsViewModel(container: AppContainer) : ViewModel() {
 fun SettingsScreen(contentPadding: PaddingValues, onBack: () -> Unit, onCategories: () -> Unit) {
     val viewModel = grosViewModel { container, _ -> SettingsViewModel(container) }
     val textSize by viewModel.textSize.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val lockEnabled by viewModel.lockEnabled.collectAsStateWithLifecycle()
     val lastBackup by viewModel.lastBackup.collectAsStateWithLifecycle()
     val reminderEnabled by viewModel.reminderEnabled.collectAsStateWithLifecycle()
@@ -118,6 +127,20 @@ fun SettingsScreen(contentPadding: PaddingValues, onBack: () -> Unit, onCategori
             )
 
             SectionTitle(stringResource(R.string.settings_appearance))
+            Text(
+                stringResource(R.string.settings_theme),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            SegmentedControl(
+                options = listOf(
+                    stringResource(R.string.settings_theme_system),
+                    stringResource(R.string.settings_theme_light),
+                    stringResource(R.string.settings_theme_dark),
+                ),
+                selectedIndex = themeMode.ordinal,
+                onSelect = { viewModel.setThemeMode(ThemeMode.entries[it]) },
+            )
             Text(
                 stringResource(R.string.settings_text_size),
                 style = MaterialTheme.typography.bodyMedium,

@@ -142,25 +142,25 @@ Mockup je kreslený pre jednu veľkosť (390 × 844 px); appka sa musí prispôs
 
 Claude Code mockup na claude.ai neotvorí; záväzné sú tieto tokeny a PNG snímky obrazoviek v `docs/mockup/` v repozitári.
 
-| Token | Tmavá téma | Použitie |
-| --- | --- | --- |
-| background | #0E1311 | Pozadie obrazovky |
-| surface | #171E1B | Karty, riadky, spodná lišta |
-| surfaceVariant | #202925 | Vnorené dlaždice v kartách |
-| outline | #2A3530 | Oddeľovače, vypnutý prepínač, podklad ukazovateľov |
-| onSurface | #EDF2EF | Hlavný text |
-| onSurfaceVariant | #A3B0A9 | Popisy, sekundárny text |
-| primary | #6EE7B0 | Akcent, príjmy, aktívna záložka, hlavné tlačidlo |
-| onPrimary | #0E1311 | Text na akcente |
-| transfer / transferContainer | #9CC0FF / #24304A | Prevody |
-| warning | #FFB36B | Prekročený rozpočet, deštruktívna akcia |
-| expense | #FF8A8A | Sumy výdavkov (F2) |
+| Token | Tmavá téma | Svetlá téma (H1) | Použitie |
+| --- | --- | --- | --- |
+| background | #0E1311 | #F3F6F4 | Pozadie obrazovky |
+| surface | #171E1B | #FFFFFF | Karty, riadky, spodná lišta |
+| surfaceVariant | #202925 | #E8EEEA | Vnorené dlaždice v kartách |
+| outline | #2A3530 | #C5D1CA | Oddeľovače, vypnutý prepínač, podklad ukazovateľov |
+| onSurface | #EDF2EF | #111915 | Hlavný text |
+| onSurfaceVariant | #A3B0A9 | #4B5851 | Popisy, sekundárny text |
+| primary | #6EE7B0 | #0A7148 | Akcent, príjmy, aktívna záložka, hlavné tlačidlo |
+| onPrimary | #0E1311 | #FFFFFF | Text na akcente |
+| transfer / transferContainer | #9CC0FF / #24304A | #2A5BB5 / #DCE6FA | Prevody |
+| warning | #FFB36B | #9A4A00 | Prekročený rozpočet, deštruktívna akcia |
+| expense | #FF8A8A | #BA2D36 | Sumy výdavkov (F2) |
 
 - Písma: Inter (text) a Space Grotesk (nadpisy, veľké sumy), obe pribalené v `res/font` (licencia OFL). Žiadne downloadable fonts, tie vyžadujú poskytovateľa mimo appky. Sumy používajú tabulkové číslice.
 - Tvary: karty 24 / 18 / 14 dp, tlačidlá 16 dp, čipy a okrúhle tlačidlá plne zaoblené.
 - Paleta kategórií (pozadie / text): zelená #2B3A33 / #6EE7B0, fialová #2E2B40 / #C5B8FF, oranžová #3A3226 / #FFB36B, modrá #24304A / #9CC0FF, ružová #3A2834 / #F5A3C7, sivá #2A3530 / #C9D4CE.
 - Ikony sú vlastné vektorové drawable, bez knižnice `material-icons-extended`.
-- Svetlú tému navrhne Claude Code v M6 ako druhú sadu tých istých tokenov s kontrastom textu ≥ 4,5 : 1 a predloží ju na schválenie.
+- Svetlá téma (schválená v M6, H1) je druhá sada tých istých tokenov; kontrast každého textu voči každému pozadiu je ≥ 5 : 1. Paleta kategórií vo svetlej téme (pozadie / text): zelená #D8F0E4 / #0A7148, fialová #E6E1FA / #5841B5, oranžová #FBE6CF / #8F4700, modrá #DCE6FA / #2A5BB5, ružová #F8DDE9 / #A12F63, sivá #E3E9E6 / #4B5851.
 
 ## Biznis pravidlá
 
@@ -302,26 +302,51 @@ Import je dostupný aj v sprievodcovi prvým spustením (obnova na novom telefó
 
 **Akceptačné kritériá**
 
-- [ ] Zápis výdavku: + → suma → kategória → Uložiť, bez povinného ďalšieho poľa.
-- [ ] Každý typ záznamu (transakcia, prevod, pravidlo, účet, kategória, rozpočet) má funkčnú úpravu.
-- [ ] Rozpracovaná transakcia prežije otočenie obrazovky.
-- [ ] Posledný aktívny účet sa nedá archivovať; pri jednom účte je typ Prevod nedostupný.
-- [ ] Výdavok sa dá uložiť do hlavnej kategórie aj do podkategórie; výber podkategórie nie je povinný.
-- [ ] Rozpočet, report aj filter hlavnej kategórie zahŕňajú transakcie jej podkategórií.
-- [ ] Kategórie nemajú tretiu úroveň; podkategória má vždy `kind` rodiča (unit test invariantov).
-- [ ] Generátor opakovaní: mesačné pravidlo z 31. dňa, 29. 2. v neprestupnom roku, interval 3 mesiace, dobehnutie 3 zmeškaných mesiacov, výskyt v deň `endDate`, dvojitý beh bez duplicít.
-- [ ] Zmena dátumu alebo zmazanie vygenerovanej transakcie nezablokuje ani nezopakuje ďalší výskyt pravidla.
-- [ ] Prevod nemení príjmy, výdavky, reporty ani rozpočty; mení len zostatky oboch účtov.
-- [ ] Účet mimo súčtu sa neprejaví v „Spolu“, ale jeho výdavky sú v reportoch.
-- [ ] Oprava zostatku zmení zostatok účtu na zadanú hodnotu a nezmení reporty ani rozpočty.
-- [ ] Hľadanie „alza“ nájde transakcie s poznámkou „Alza“ na všetkých účtoch a súčet nad výsledkom sedí s ručným výpočtom.
-- [ ] Ťuknutie na účet zobrazí len jeho pohyby vrátane prevodov a jeho aktuálny zostatok.
-- [ ] Záloha: round-trip test, nesprávne heslo, poškodený súbor, nevalidný obsah, odmietnutie novšej verzie schémy.
-- [ ] So zapnutým zámkom sa pred overením nevykreslí žiadny obsah; bez zámku obrazovky zariadenia sa appka otvorí s upozornením.
-- [ ] Zlúčený manifest release buildu neobsahuje `INTERNET` ani `ACCESS_NETWORK_STATE` (automatický test nad výstupom buildu).
-- [ ] Každá obrazovka je použiteľná pri šírke 360 dp, písme 200 % a na šírku: nič nie je orezané ani prekryté.
-- [ ] Dotykové ciele ≥ 48 dp, kontrast textu ≥ 4,5 : 1, popisy pre TalkBack na ikonách.
-- [ ] Žiadna funkcia zo zoznamu „Zámerne mimo rozsahu“ nie je implementovaná.
+- [x] Zápis výdavku: + → suma → kategória → Uložiť, bez povinného ďalšieho poľa.
+- [x] Každý typ záznamu (transakcia, prevod, pravidlo, účet, kategória, rozpočet) má funkčnú úpravu.
+- [x] Rozpracovaná transakcia prežije otočenie obrazovky.
+- [x] Posledný aktívny účet sa nedá archivovať; pri jednom účte je typ Prevod nedostupný.
+- [x] Výdavok sa dá uložiť do hlavnej kategórie aj do podkategórie; výber podkategórie nie je povinný.
+- [x] Rozpočet, report aj filter hlavnej kategórie zahŕňajú transakcie jej podkategórií.
+- [x] Kategórie nemajú tretiu úroveň; podkategória má vždy `kind` rodiča (unit test invariantov).
+- [x] Generátor opakovaní: mesačné pravidlo z 31. dňa, 29. 2. v neprestupnom roku, interval 3 mesiace, dobehnutie 3 zmeškaných mesiacov, výskyt v deň `endDate`, dvojitý beh bez duplicít.
+- [x] Zmena dátumu alebo zmazanie vygenerovanej transakcie nezablokuje ani nezopakuje ďalší výskyt pravidla.
+- [x] Prevod nemení príjmy, výdavky, reporty ani rozpočty; mení len zostatky oboch účtov.
+- [x] Účet mimo súčtu sa neprejaví v „Spolu“, ale jeho výdavky sú v reportoch.
+- [x] Oprava zostatku zmení zostatok účtu na zadanú hodnotu a nezmení reporty ani rozpočty.
+- [x] Hľadanie „alza“ nájde transakcie s poznámkou „Alza“ na všetkých účtoch a súčet nad výsledkom sedí s ručným výpočtom.
+- [x] Ťuknutie na účet zobrazí len jeho pohyby vrátane prevodov a jeho aktuálny zostatok.
+- [x] Záloha: round-trip test, nesprávne heslo, poškodený súbor, nevalidný obsah, odmietnutie novšej verzie schémy.
+- [x] So zapnutým zámkom sa pred overením nevykreslí žiadny obsah; bez zámku obrazovky zariadenia sa appka otvorí s upozornením.
+- [x] Zlúčený manifest release buildu neobsahuje `INTERNET` ani `ACCESS_NETWORK_STATE` (automatický test nad výstupom buildu).
+- [x] Každá obrazovka je použiteľná pri šírke 360 dp, písme 200 % a na šírku: nič nie je orezané ani prekryté.
+- [x] Dotykové ciele ≥ 48 dp, kontrast textu ≥ 4,5 : 1, popisy pre TalkBack na ikonách.
+- [x] Žiadna funkcia zo zoznamu „Zámerne mimo rozsahu“ nie je implementovaná.
+
+Overenie (M6, 26. 11. 2026) – kde je každé kritérium dokázané; testy sú v `app/src/test`:
+
+| Kritérium | Dôkaz |
+| --- | --- |
+| Zápis výdavku bez ďalšieho poľa | Emulátor (M2 aj M6); `TransactionFormRules` – Uložiť je aktívne po sume a kategórii |
+| Úprava každého typu záznamu | Emulátor (M2–M5); `TransactionRepositoryTest`, `AccountRepositoryTest`, `CategoryRepositoryTest`, `RuleAndBudgetRepositoryTest` |
+| Rozpracovaná transakcia po otočení | Emulátor M6: suma 12 € ostala po otočení na šírku; stav v `SavedStateHandle` |
+| Posledný účet, Prevod pri jednom účte | `EntityRulesTest`, `AccountRepositoryTest` („last active account cannot be archived“), `TransactionListTest` („transfer is available only with two active accounts“) |
+| Hlavná kategória aj podkategória | `PostingRulesTest`, `TransactionRepositoryTest` |
+| Podkategórie v rozpočte, reporte a filtri | `TransactionQueryTest` („main category filter includes subcategories…“), `ReportQueryTest`, `BudgetsAndReportsTest` |
+| Bez tretej úrovne, `kind` rodiča | `CategoryRepositoryTest`, `EntityRulesTest` |
+| Generátor opakovaní | `RecurrenceTest`, `RecurringGeneratorTest` (31. deň, 29. 2., interval 3, tri zmeškané mesiace, `endDate`, dvojitý beh) |
+| Zmena či zmazanie vygenerovanej transakcie | `RecurringGeneratorTest` („moving or deleting a generated transaction…“) |
+| Prevod mení len zostatky | `BalanceCalculatorTest`, `AccountRepositoryTest`, `TransactionListTest` |
+| Účet mimo súčtu | `AccountRepositoryTest` („total counts only…“), `ReportQueryTest` (výdavok z účtu mimo súčtu v reporte) |
+| Oprava zostatku | `AccountRepositoryTest`, `ReportQueryTest` („balance correction changes neither…“) |
+| Hľadanie „alza“ a súčet | `NoteNormalizerTest`, `TransactionQueryTest` („search ignores case and diacritics across all accounts and the sum matches“) |
+| Filter účtu s prevodmi a zostatkom | `TransactionQueryTest` („account filter shows its transactions including transfers…“) |
+| Záloha | `BackupRepositoryTest` (export → vymazanie → import vráti identické dáta), `BackupCryptoTest`, `BackupContentTest` |
+| Zámok | `AppLockTest`; emulátor M5 (nič sa nevykreslí pred overením, upozornenie bez zámku obrazovky) |
+| Manifest bez siete | Úloha `verifyReleaseNoNetworkPermissions` v `app/build.gradle.kts`, beží pri každom release builde |
+| 360 dp, písmo 200 %, na šírku | Emulátor M6: všetky obrazovky pri 360 dp a 200 %, hlavné obrazovky na šírku; nadmerne široký obsah sa zoradí pod seba (`AdaptiveRow`, `ListItemLayout`) |
+| 48 dp, kontrast, TalkBack | `AccessibilityTest` (spoločné ovládacie prvky, obe témy, písmo 200 %); audit stromu prístupnosti na emulátore bez nálezu; kontrast tokenov ≥ 5 : 1 (H1) |
+| Nič mimo rozsahu | Kontrola kódu pred vydaním 1.0.0 |
 
 **Pokyny pre Claude Code**
 
@@ -434,3 +459,13 @@ Schválené Mirecom spolu s plánom M5. M5 sa vydá v dvoch častiach: v0.5.0 (N
 - G9 Widget je 1 × 1 okrúhle tlačidlo + v akcentovej farbe s náhľadom v zozname widgetov.
 - G10 Na začiatku M5 sa aktualizovali knižnice (Compose BOM 2026.11.01, lifecycle 2.11.1, AGP 9.5.2, Gradle 9.9.2, Robolectric 4.18.1); compileSdk je 37.2, targetSdk ostáva 37.
 - G11 Doplnené pri implementácii (nadväzuje na pravidlo rozpočtov pri zlúčení): keď sa hlavná kategória presunie pod inú alebo zlúči, jej rozpočet prejde na novú hlavnú kategóriu, ak tá rozpočet nemá; inak zanikne. Pri zlúčení hlavnej kategórie sa rovnomenná podkategória zlúči do existujúcej podkategórie cieľa, aby nevznikla duplicita (G1). Podkategórie sa spravujú v detaile hlavnej kategórie (tam sa mení aj ich poradie).
+
+## Rozhodnutia k M6 (26. 11. 2026)
+
+Schválené Mirecom spolu s plánom M6.
+
+- H1 Svetlá téma podľa tabuľky Dizajnových tokenov. Nastavenia → Vzhľad majú voľbu témy Systém / Svetlá / Tmavá; predvolená je Tmavá, aby sa vzhľad po aktualizácii nezmenil sám. Pozadie okna pred vykreslením appky sa riadi systémovou témou.
+- H2 Výsledná veľkosť písma (systémová × voľba v appke, F4) je obmedzená na 200 %.
+- H3 Widget sa riadi systémovou témou, nie voľbou v appke.
+- H4 README je po slovensky.
+- H5 Vydanie po M6 má verziu 1.0.0.

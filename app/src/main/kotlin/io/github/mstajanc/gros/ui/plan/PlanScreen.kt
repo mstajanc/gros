@@ -1,5 +1,6 @@
 package io.github.mstajanc.gros.ui.plan
 
+import io.github.mstajanc.gros.ui.common.ListItemLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +51,7 @@ import io.github.mstajanc.gros.ui.common.ScreenHeader
 import io.github.mstajanc.gros.ui.common.ScreenPadding
 import io.github.mstajanc.gros.ui.common.SecondaryButton
 import io.github.mstajanc.gros.ui.common.SegmentedControl
+import io.github.mstajanc.gros.ui.common.AdaptiveRow
 import io.github.mstajanc.gros.ui.common.SummaryTile
 import io.github.mstajanc.gros.ui.common.TransferBadge
 import io.github.mstajanc.gros.ui.common.categoryColor
@@ -125,19 +127,17 @@ fun PlanScreen(
             }
             if (!state.loaded) return@Column
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AdaptiveRow {
                 // Znamienka podľa mockupu 06: výdavky bez mínusu, príjmy v akcentovej farbe (A12).
                 SummaryTile(
                     label = stringResource(R.string.plan_expenses_month),
                     amount = MoneyFormatter.format(state.summary.expenseCents),
-                    modifier = Modifier.weight(1f),
                     amountColor = GrosTheme.colors.expense,
                     containerColor = MaterialTheme.colorScheme.surface,
                 )
                 SummaryTile(
                     label = stringResource(R.string.plan_income_month),
                     amount = MoneyFormatter.format(state.summary.incomeCents),
-                    modifier = Modifier.weight(1f),
                     amountColor = MaterialTheme.colorScheme.primary,
                     containerColor = MaterialTheme.colorScheme.surface,
                 )
@@ -217,7 +217,7 @@ private fun RuleCard(rule: RecurringRule, status: RuleStatus, state: PlanState, 
     }
     val dimmed = status != RuleStatus.ACTIVE
 
-    Row(
+    ListItemLayout(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 72.dp)
@@ -225,37 +225,43 @@ private fun RuleCard(rule: RecurringRule, status: RuleStatus, state: PlanState, 
             .background(MaterialTheme.colorScheme.surface)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        if (isTransfer) {
-            TransferBadge()
-        } else {
-            CategoryBadge(lookup.mainCategory(rule.categoryId)?.name.orEmpty(), categoryColor(lookup, rule.categoryId))
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                rule.name,
-                style = MaterialTheme.typography.titleMedium,
-                color = if (dimmed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-            )
-            // Kategória vpredu, aby sa platby s rovnakým písmenom v ikone dali rozlíšiť (F3);
-            // riadok sa nezalamuje, dlhý text skončí „…“.
-            Text(
-                listOfNotNull(
-                    if (isTransfer) null else categoryPath(lookup, rule.categoryId),
-                    repeatShort(rule.frequency, rule.interval),
-                    accountText,
-                ).joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            AmountText(amount, color = if (dimmed) MaterialTheme.colorScheme.onSurfaceVariant else amountColor)
-            Text(dateText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        leading = {
+            if (isTransfer) {
+                TransferBadge()
+            } else {
+                CategoryBadge(lookup.mainCategory(rule.categoryId)?.name.orEmpty(), categoryColor(lookup, rule.categoryId))
+            }
+        },
+        content = { RuleTexts(rule, lookup, isTransfer, accountText, dimmed) },
+        trailing = {
+            Column(horizontalAlignment = Alignment.End) {
+                AmountText(amount, color = if (dimmed) MaterialTheme.colorScheme.onSurfaceVariant else amountColor)
+                Text(dateText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+    )
+}
+
+@Composable
+private fun RuleTexts(rule: RecurringRule, lookup: Lookup, isTransfer: Boolean, accountText: String, dimmed: Boolean) {
+    Column {
+        Text(
+            rule.name,
+            style = MaterialTheme.typography.titleMedium,
+            color = if (dimmed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+        )
+        // Kategória vpredu, aby sa platby s rovnakým písmenom v ikone dali rozlíšiť (F3);
+        // riadok sa nezalamuje, dlhý text skončí „…“.
+        Text(
+            listOfNotNull(
+                if (isTransfer) null else categoryPath(lookup, rule.categoryId),
+                repeatShort(rule.frequency, rule.interval),
+                accountText,
+            ).joinToString(" · "),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }

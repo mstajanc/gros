@@ -58,6 +58,7 @@ import io.github.mstajanc.gros.ui.common.ProgressBar
 import io.github.mstajanc.gros.ui.common.ScreenHeader
 import io.github.mstajanc.gros.ui.common.ScreenPadding
 import io.github.mstajanc.gros.ui.common.SegmentedControl
+import io.github.mstajanc.gros.ui.common.AdaptiveRow
 import io.github.mstajanc.gros.ui.common.SummaryTile
 import io.github.mstajanc.gros.ui.common.grosViewModel
 import io.github.mstajanc.gros.ui.theme.GrosShapes
@@ -283,16 +284,14 @@ private fun BalanceCard(totals: PeriodTotals) {
             color = if (totals.balanceCents >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 6.dp, bottom = 14.dp),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        AdaptiveRow {
             SummaryTile(
                 label = stringResource(R.string.report_income),
                 amount = MoneyFormatter.format(totals.incomeCents),
-                modifier = Modifier.weight(1f),
             )
             SummaryTile(
                 label = stringResource(R.string.report_expenses),
                 amount = MoneyFormatter.format(totals.expenseCents),
-                modifier = Modifier.weight(1f),
                 amountColor = GrosTheme.colors.expense,
             )
         }

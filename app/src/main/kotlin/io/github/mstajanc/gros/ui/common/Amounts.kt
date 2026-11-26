@@ -1,5 +1,6 @@
 package io.github.mstajanc.gros.ui.common
 
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,7 +47,17 @@ fun AmountText(
     color: Color = MaterialTheme.colorScheme.onSurface,
     textAlign: TextAlign? = null,
 ) {
-    Text(text, modifier = modifier, style = style.tabularNumbers(), color = color, maxLines = 1, softWrap = false, textAlign = textAlign)
+    // Suma sa nikdy nezalomí; keď sa v úzkom okne s veľkým písmom nezmestí, radšej sa zmenší.
+    Text(
+        text,
+        modifier = modifier,
+        style = style.tabularNumbers(),
+        color = color,
+        maxLines = 1,
+        softWrap = false,
+        textAlign = textAlign,
+        autoSize = TextAutoSize.StepBased(minFontSize = style.fontSize * 0.5f, maxFontSize = style.fontSize),
+    )
 }
 
 @Composable

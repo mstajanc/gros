@@ -65,6 +65,7 @@ import io.github.mstajanc.gros.ui.common.RowStyle
 import io.github.mstajanc.gros.ui.common.ScreenHeader
 import io.github.mstajanc.gros.ui.common.ScreenPadding
 import io.github.mstajanc.gros.ui.common.SheetOption
+import io.github.mstajanc.gros.ui.common.AdaptiveRow
 import io.github.mstajanc.gros.ui.common.SummaryTile
 import io.github.mstajanc.gros.ui.common.TransactionRow
 import io.github.mstajanc.gros.ui.common.grosViewModel
@@ -144,7 +145,10 @@ fun TransactionsScreen(onEdit: (Long) -> Unit, contentPadding: PaddingValues, on
                 LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp)) {
                     item(key = "summary") { Summary(state) }
                     if (state.transactions.isEmpty()) {
-                        item(key = "empty") { InfoText(stringResource(R.string.list_empty)) }
+                        item(key = "empty") {
+                            val searching = state.searchActive && state.filter.query.isNotBlank()
+                            InfoText(stringResource(if (searching) R.string.search_empty else R.string.list_empty))
+                        }
                     } else if (state.searchActive) {
                         // V režime hľadania je titulkom poznámka a zoznam nie je delený po dňoch.
                         items(state.transactions, key = { it.id }) { transaction ->
@@ -295,18 +299,16 @@ private fun Summary(state: TransactionsState) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        AdaptiveRow {
             SummaryTile(
                 label = stringResource(R.string.tx_expenses),
                 amount = MoneyFormatter.format(-state.summary.expenseCents),
-                modifier = Modifier.weight(1f),
                 amountColor = GrosTheme.colors.expense,
                 containerColor = MaterialTheme.colorScheme.surface,
             )
             SummaryTile(
                 label = stringResource(R.string.tx_income),
                 amount = MoneyFormatter.format(state.summary.incomeCents, SignDisplay.ALWAYS),
-                modifier = Modifier.weight(1f),
                 amountColor = MaterialTheme.colorScheme.primary,
                 containerColor = MaterialTheme.colorScheme.surface,
             )

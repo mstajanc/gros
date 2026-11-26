@@ -1,5 +1,7 @@
 package io.github.mstajanc.gros.ui.common
 
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -108,12 +110,20 @@ fun ScreenHeader(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (onBack != null) CircleIconButton(backIcon, backDescription, onBack)
-        Text(
-            title,
-            modifier = Modifier.weight(1f).semantics { heading() },
-            style = if (onBack == null) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineMedium,
-        )
-        action()
+        // Akcia ostáva vpravo od nadpisu; keď sa vedľa neho nezmestí, zalomí sa pod neho.
+        FlowRow(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                title,
+                modifier = Modifier.weight(1f).semantics { heading() },
+                style = if (onBack == null) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineMedium,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), content = action)
+        }
     }
 }
 
@@ -172,11 +182,15 @@ fun SegmentedControl(
                     .padding(horizontal = 8.dp, vertical = 12.dp),
                 contentAlignment = Alignment.Center,
             ) {
+                // Voľba je vždy na jeden riadok; pri veľkom písme v úzkom okne sa text radšej zmenší.
+                val style = MaterialTheme.typography.labelLarge
                 Text(
                     label,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = style,
                     color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(minFontSize = style.fontSize * 0.5f, maxFontSize = style.fontSize),
                 )
             }
         }

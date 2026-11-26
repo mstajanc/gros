@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tmavá téma systému: okno pred vykreslením a widget (H1, H3). -->
+    <color name="gros_background">#0E1311</color>
+    <color name="gros_primary">#6EE7B0</color>
+    <color name="gros_on_primary">#0E1311</color>
+</resources>

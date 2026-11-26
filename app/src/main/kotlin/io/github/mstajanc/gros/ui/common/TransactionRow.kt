@@ -117,27 +117,28 @@ fun TransactionRow(
         TransactionType.EXPENSE -> GrosTheme.colors.expense
     }
 
-    Row(
+    ListItemLayout(
         modifier = modifier
             .fillMaxWidth()
             .clickable(role = Role.Button, onClick = onClick)
             .heightIn(min = 56.dp)
             .padding(horizontal = ScreenPadding, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        if (isTransfer) {
-            TransferBadge()
-        } else {
-            CategoryBadge(
-                name = lookup.mainCategory(transaction.categoryId)?.name.orEmpty(),
-                color = categoryColor(lookup, transaction.categoryId),
-            )
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        AmountText(MoneyFormatter.format(amount.cents, amount.sign), color = amountColor)
-    }
+        leading = {
+            if (isTransfer) {
+                TransferBadge()
+            } else {
+                CategoryBadge(
+                    name = lookup.mainCategory(transaction.categoryId)?.name.orEmpty(),
+                    color = categoryColor(lookup, transaction.categoryId),
+                )
+            }
+        },
+        content = {
+            Column {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        trailing = { AmountText(MoneyFormatter.format(amount.cents, amount.sign), color = amountColor) },
+    )
 }

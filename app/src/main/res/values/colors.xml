@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Len farby potrebné mimo Compose (okno pred vykreslením, ikona). Ostatné tokeny sú v ui/theme. -->
-    <color name="gros_background">#0E1311</color>
-    <color name="gros_primary">#6EE7B0</color>
-    <color name="gros_on_primary">#0E1311</color>
+    <!-- Len farby potrebné mimo Compose. Ostatné tokeny sú v ui/theme. -->
+
+    <!-- Ikona appky je v oboch témach rovnaká (tmavé pozadie, zelené G). -->
+    <color name="gros_icon_background">#0E1311</color>
+    <color name="gros_icon_foreground">#6EE7B0</color>
+
+    <!-- Okno pred vykreslením a widget sa riadia systémovou témou (H1, H3); tmavé hodnoty sú vo values-night. -->
+    <color name="gros_background">#F3F6F4</color>
+    <color name="gros_primary">#0A7148</color>
+    <color name="gros_on_primary">#FFFFFF</color>
 </resources>

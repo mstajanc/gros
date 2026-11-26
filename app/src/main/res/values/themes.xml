@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Téma okna; vzhľad obsahu určuje GrosTheme v Compose. -->
-    <style name="Theme.Gros" parent="android:Theme.Material.NoActionBar">
+    <!-- Téma okna podľa systémovej témy (H1); vzhľad obsahu určuje GrosTheme v Compose. -->
+    <style name="Theme.Gros" parent="android:Theme.DeviceDefault.DayNight">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@color/gros_background</item>
         <item name="android:windowSplashScreenBackground">@color/gros_background</item>
     </style>
